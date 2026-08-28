@@ -1,0 +1,17 @@
+{
+  "model_version": "iforest-cbc-v1",
+  "features": [
+    "WBC",
+    "RBC",
+    "HGB",
+    "HCT",
+    "PLT",
+    "sex",
+    "age"
+  ],
+  "panel": "CBC",
+  "contamination": 0.05,
+  "n_estimators": 100,
+  "training_rows": 400,
+  "notes": "Synthetic normals for demo; retrain quarterly with released lab history."
+}

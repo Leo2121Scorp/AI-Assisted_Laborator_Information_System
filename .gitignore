@@ -1,0 +1,8 @@
+backups/
+*.sql.gz
+ai/models/*.joblib
+__pycache__/
+ai/__pycache__/
+.env
+.idea/
+.vscode/
