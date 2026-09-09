@@ -19,6 +19,14 @@ function db(): PDO
     }
     $cfg = require __DIR__ . '/../config/database.php';
     $driver = $cfg['driver'] ?? 'mysql';
+
+    // Hosted deploy without DATABASE_URL must not try XAMPP localhost
+    if (!empty($cfg['hosted']) && $driver === 'mysql' && ($cfg['host'] === '127.0.0.1' || $cfg['host'] === 'localhost')) {
+        throw new RuntimeException(
+            'Database not configured. On Render → ailab-web → Environment, set DATABASE_URL to your Postgres Internal Database URL, then redeploy.'
+        );
+    }
+
     if ($driver === 'pgsql') {
         $dsn = sprintf(
             'pgsql:host=%s;port=%d;dbname=%s',
