@@ -38,13 +38,20 @@ $port = (int) (ailab_env('MYSQLPORT') ?? ailab_env('DB_PORT') ?? 3306);
 $dbname = ailab_env('MYSQLDATABASE') ?? ailab_env('DB_NAME') ?? 'ailab_lis';
 $username = ailab_env('MYSQLUSER') ?? ailab_env('DB_USER') ?? 'root';
 $password = ailab_env('MYSQLPASSWORD') ?? ailab_env('DB_PASSWORD') ?? '';
+$sslmode = null;
+$hostCandidates = [];
 
 // Render Postgres / Railway / generic DATABASE_URL
 $url = ailab_env('DATABASE_URL') ?? ailab_env('MYSQL_URL');
 if (is_string($url) && $url !== '') {
+    if (str_contains($url, '…') || str_contains($url, '...')) {
+        throw new RuntimeException(
+            'DATABASE_URL looks truncated (contains …). Re-copy the full External Database URL from Render Postgres → Connections.'
+        );
+    }
+
     // Fix common copy mistake: missing "@" before Render host (dpg-...)
-    // e.g. postgresql://user:passdpg-xxx/db  →  postgresql://user:pass@dpg-xxx/db
-    if (preg_match('#^(postgres(?:ql)?://[^:/]+):([^@/]+)(dpg-[^/]+)(/.*)?$#i', $url, $m)) {
+    if (preg_match('#^(postgres(?:ql)?://[^:/]+):([^@/]+)(dpg-[^/@]+)(/.*)?$#i', $url, $m)) {
         $url = $m[1] . ':' . $m[2] . '@' . $m[3] . ($m[4] ?? '');
     }
 
@@ -54,6 +61,7 @@ if (is_string($url) && $url !== '') {
         if (in_array($scheme, ['postgres', 'postgresql'], true)) {
             $driver = 'pgsql';
             $port = isset($parts['port']) ? (int) $parts['port'] : 5432;
+            $sslmode = 'require';
         } elseif (str_starts_with($scheme, 'mysql')) {
             $driver = 'mysql';
             $port = isset($parts['port']) ? (int) $parts['port'] : 3306;
@@ -65,18 +73,42 @@ if (is_string($url) && $url !== '') {
         if (str_contains($dbname, '?')) {
             $dbname = strstr($dbname, '?', true);
         }
+        if (!empty($parts['query'])) {
+            parse_str($parts['query'], $q);
+            if (!empty($q['sslmode'])) {
+                $sslmode = (string) $q['sslmode'];
+            }
+        }
     }
 }
 
 // Render also exposes discrete Postgres vars
-if ($driver === 'mysql' && ailab_env('PGHOST')) {
-    $driver = 'pgsql';
-    $host = ailab_env('PGHOST') ?? $host;
-    $port = (int) (ailab_env('PGPORT') ?? 5432);
-    $dbname = ailab_env('PGDATABASE') ?? $dbname;
-    $username = ailab_env('PGUSER') ?? $username;
-    $password = ailab_env('PGPASSWORD') ?? $password;
+if (($driver === 'mysql' && ailab_env('PGHOST')) || ailab_env('PGHOST')) {
+    if (ailab_env('PGHOST')) {
+        $driver = 'pgsql';
+        $host = ailab_env('PGHOST') ?? $host;
+        $port = (int) (ailab_env('PGPORT') ?? 5432);
+        $dbname = ailab_env('PGDATABASE') ?? $dbname;
+        $username = ailab_env('PGUSER') ?? $username;
+        $password = ailab_env('PGPASSWORD') ?? $password;
+        $sslmode = $sslmode ?: 'require';
+    }
 }
+
+// Build host candidates: internal short name often fails DNS; try external FQDNs
+$hostCandidates[] = $host;
+if ($driver === 'pgsql' && is_string($host) && preg_match('/^dpg-[a-z0-9]+-a$/i', $host)) {
+    $regions = ['oregon', 'singapore', 'frankfurt', 'ohio', 'virginia'];
+    $preferred = ailab_env('RENDER_POSTGRES_REGION');
+    if ($preferred) {
+        array_unshift($regions, strtolower($preferred));
+        $regions = array_values(array_unique($regions));
+    }
+    foreach ($regions as $region) {
+        $hostCandidates[] = $host . '.' . $region . '-postgres.render.com';
+    }
+}
+$hostCandidates = array_values(array_unique(array_filter($hostCandidates)));
 
 // On Render/Railway, never silently fall back to localhost MySQL
 $hosted = ailab_env('RENDER') === 'true'
@@ -87,10 +119,12 @@ $hosted = ailab_env('RENDER') === 'true'
 return [
     'driver' => $driver,
     'host' => $host,
+    'host_candidates' => $hostCandidates,
     'port' => $port,
     'dbname' => $dbname,
     'username' => $username,
     'password' => $password,
     'charset' => 'utf8mb4',
+    'sslmode' => $sslmode,
     'hosted' => $hosted,
 ];

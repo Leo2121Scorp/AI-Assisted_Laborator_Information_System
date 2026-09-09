@@ -24,27 +24,52 @@ function db(): PDO
     if (!empty($cfg['hosted']) && ($cfg['host'] === '127.0.0.1' || $cfg['host'] === 'localhost')) {
         throw new RuntimeException(
             'DATABASE_URL is not reaching this service. On Render: open ailab-web → Environment → '
-            . 'Link Environment Group (or add DATABASE_URL directly), then Manual Deploy. '
-            . 'URL must look like: postgresql://USER:PASSWORD@dpg-xxxxx/dbname (note the @ before dpg-).'
+            . 'set DATABASE_URL to the Postgres External Database URL (full host ending in -postgres.render.com), then Save, rebuild, and deploy.'
         );
     }
 
     if ($driver === 'pgsql') {
-        $dsn = sprintf(
-            'pgsql:host=%s;port=%d;dbname=%s',
-            $cfg['host'],
-            $cfg['port'],
-            $cfg['dbname']
-        );
-    } else {
-        $dsn = sprintf(
-            'mysql:host=%s;port=%d;dbname=%s;charset=%s',
-            $cfg['host'],
-            $cfg['port'],
-            $cfg['dbname'],
-            $cfg['charset']
+        $hosts = $cfg['host_candidates'] ?? [$cfg['host']];
+        $ssl = $cfg['sslmode'] ?? 'require';
+        $last = null;
+        foreach ($hosts as $host) {
+            if (!is_string($host) || $host === '' || str_contains($host, '…')) {
+                continue;
+            }
+            $dsn = sprintf(
+                'pgsql:host=%s;port=%d;dbname=%s;sslmode=%s',
+                $host,
+                $cfg['port'],
+                $cfg['dbname'],
+                $ssl
+            );
+            try {
+                $pdo = new PDO($dsn, $cfg['username'], $cfg['password'], [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::ATTR_EMULATE_PREPARES => false,
+                ]);
+                return $pdo;
+            } catch (Throwable $e) {
+                $last = $e;
+            }
+        }
+        throw new RuntimeException(
+            'Could not connect to Postgres. Use the External Database URL from Render (host must look like '
+            . 'dpg-xxxxx-a.REGION-postgres.render.com). Last error: '
+            . ($last ? $last->getMessage() : 'unknown'),
+            0,
+            $last
         );
     }
+
+    $dsn = sprintf(
+        'mysql:host=%s;port=%d;dbname=%s;charset=%s',
+        $cfg['host'],
+        $cfg['port'],
+        $cfg['dbname'],
+        $cfg['charset']
+    );
     $pdo = new PDO($dsn, $cfg['username'], $cfg['password'], [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
