@@ -18,19 +18,34 @@ function db(): PDO
         return $pdo;
     }
     $cfg = require __DIR__ . '/../config/database.php';
-    $dsn = sprintf(
-        'mysql:host=%s;port=%d;dbname=%s;charset=%s',
-        $cfg['host'],
-        $cfg['port'],
-        $cfg['dbname'],
-        $cfg['charset']
-    );
+    $driver = $cfg['driver'] ?? 'mysql';
+    if ($driver === 'pgsql') {
+        $dsn = sprintf(
+            'pgsql:host=%s;port=%d;dbname=%s',
+            $cfg['host'],
+            $cfg['port'],
+            $cfg['dbname']
+        );
+    } else {
+        $dsn = sprintf(
+            'mysql:host=%s;port=%d;dbname=%s;charset=%s',
+            $cfg['host'],
+            $cfg['port'],
+            $cfg['dbname'],
+            $cfg['charset']
+        );
+    }
     $pdo = new PDO($dsn, $cfg['username'], $cfg['password'], [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
     ]);
     return $pdo;
+}
+
+function db_driver(): string
+{
+    return (string) ((require __DIR__ . '/../config/database.php')['driver'] ?? 'mysql');
 }
 
 function app_config(?string $key = null, $default = null)
@@ -114,3 +129,4 @@ require_once __DIR__ . '/audit.php';
 require_once __DIR__ . '/validation.php';
 require_once __DIR__ . '/ai_client.php';
 require_once __DIR__ . '/workflow.php';
+require_once __DIR__ . '/guides.php';

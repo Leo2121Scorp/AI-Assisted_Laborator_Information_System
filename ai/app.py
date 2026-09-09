@@ -6,6 +6,7 @@ Default: http://127.0.0.1:5001
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import joblib
@@ -26,8 +27,21 @@ meta = {
 }
 
 
+def ensure_model() -> None:
+    """Train on first boot if the joblib artifact is missing (e.g. fresh deploy)."""
+    if MODEL_PATH.exists():
+        return
+    try:
+        from train_model import train_cbc
+
+        train_cbc()
+    except Exception as exc:  # pragma: no cover - startup safeguard
+        app.logger.warning("Could not auto-train model: %s", exc)
+
+
 def load_model() -> None:
     global model, meta
+    ensure_model()
     if META_PATH.exists():
         meta = json.loads(META_PATH.read_text(encoding="utf-8"))
     if MODEL_PATH.exists():
@@ -115,4 +129,6 @@ def predict():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5001, debug=False)
+    port = int(os.environ.get("PORT", "5001"))
+    host = os.environ.get("HOST", "0.0.0.0")
+    app.run(host=host, port=port, debug=False)

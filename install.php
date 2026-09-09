@@ -9,26 +9,23 @@ $config = require __DIR__ . '/config/database.php';
 $messages = [];
 $ok = true;
 
-function exec_sql_file(PDO $pdo, string $path, array &$messages): void
+function exec_sql_file(PDO $pdo, string $path, array &$messages, bool $skipCreateDb = false): void
 {
     $sql = file_get_contents($path);
     if ($sql === false) {
         throw new RuntimeException("Cannot read {$path}");
     }
-    // Remove block comments
     $sql = preg_replace('/\/\*.*?\*\//s', '', $sql);
     $parts = preg_split('/;\s*\n/', $sql);
     foreach ($parts as $part) {
         $stmt = trim($part);
         if ($stmt === '' || str_starts_with($stmt, '--')) {
-            // skip empty / comment-only chunks
             $lines = array_filter(array_map('trim', explode("\n", $stmt)), fn($l) => $l !== '' && !str_starts_with($l, '--'));
             if (!$lines) {
                 continue;
             }
             $stmt = implode("\n", $lines);
         }
-        // Strip leading comment lines
         $cleanLines = [];
         foreach (explode("\n", $stmt) as $line) {
             if (str_starts_with(trim($line), '--')) {
@@ -40,21 +37,62 @@ function exec_sql_file(PDO $pdo, string $path, array &$messages): void
         if ($stmt === '') {
             continue;
         }
+        if ($skipCreateDb) {
+            if (preg_match('/^\s*CREATE\s+DATABASE\b/i', $stmt)) {
+                continue;
+            }
+            if (preg_match('/^\s*USE\s+/i', $stmt)) {
+                continue;
+            }
+            if (preg_match('/^\s*SET\s+NAMES\b/i', $stmt)) {
+                continue;
+            }
+        }
         $pdo->exec($stmt);
     }
     $messages[] = basename($path) . ' executed.';
 }
 
 try {
-    $dsn = sprintf('mysql:host=%s;port=%d;charset=%s', $config['host'], $config['port'], $config['charset']);
-    $pdo = new PDO($dsn, $config['username'], $config['password'], [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-    ]);
+    $driver = $config['driver'] ?? 'mysql';
+    $managedMysql = (getenv('MYSQLHOST') !== false && getenv('MYSQLHOST') !== '')
+        || (getenv('MYSQL_URL') !== false && getenv('MYSQL_URL') !== '');
 
-    exec_sql_file($pdo, __DIR__ . '/database/schema.sql', $messages);
-    exec_sql_file($pdo, __DIR__ . '/database/seed.sql', $messages);
+    if ($driver === 'pgsql') {
+        $dsn = sprintf(
+            'pgsql:host=%s;port=%d;dbname=%s',
+            $config['host'],
+            $config['port'],
+            $config['dbname']
+        );
+        $pdo = new PDO($dsn, $config['username'], $config['password'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        ]);
+        exec_sql_file($pdo, __DIR__ . '/database/schema.postgres.sql', $messages, true);
+        exec_sql_file($pdo, __DIR__ . '/database/seed.postgres.sql', $messages, true);
+    } elseif ($managedMysql) {
+        $dsn = sprintf(
+            'mysql:host=%s;port=%d;dbname=%s;charset=%s',
+            $config['host'],
+            $config['port'],
+            $config['dbname'],
+            $config['charset']
+        );
+        $pdo = new PDO($dsn, $config['username'], $config['password'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        ]);
+        exec_sql_file($pdo, __DIR__ . '/database/schema.sql', $messages, true);
+        exec_sql_file($pdo, __DIR__ . '/database/seed.sql', $messages, true);
+    } else {
+        $dsn = sprintf('mysql:host=%s;port=%d;charset=%s', $config['host'], $config['port'], $config['charset']);
+        $pdo = new PDO($dsn, $config['username'], $config['password'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        ]);
+        exec_sql_file($pdo, __DIR__ . '/database/schema.sql', $messages, false);
+        exec_sql_file($pdo, __DIR__ . '/database/seed.sql', $messages, false);
+        $pdo->exec('USE `' . str_replace('`', '``', $config['dbname']) . '`');
+    }
 
-    $pdo->exec('USE `' . str_replace('`', '``', $config['dbname']) . '`');
     $hash = password_hash('password123', PASSWORD_DEFAULT);
     $pdo->exec('DELETE FROM users');
     $ins = $pdo->prepare('INSERT INTO users (username, password_hash, full_name, role) VALUES (?, ?, ?, ?)');
@@ -89,7 +127,6 @@ try {
         <?php if ($ok): ?>
             <p>Next steps:</p>
             <ol>
-                <li>Start Python AI: <code>cd ai && pip install -r requirements.txt && python train_model.py && python app.py</code></li>
                 <li><a href="login.php">Go to login</a></li>
                 <li>Delete or restrict <code>install.php</code> after setup.</li>
             </ol>

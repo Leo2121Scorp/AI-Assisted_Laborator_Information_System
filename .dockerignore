@@ -1,0 +1,9 @@
+# Ignore local junk in the PHP image (AI has its own Dockerfile context)
+.git
+.idea
+.vscode
+backups/*
+!backups/.gitkeep
+*.md
+docs
+Revised-CAP.docx

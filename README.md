@@ -40,6 +40,36 @@ python app.py
 
 See [`docs/RBAC_AND_STATE_MACHINE.md`](docs/RBAC_AND_STATE_MACHINE.md), [`docs/ERD.md`](docs/ERD.md), [`docs/PYTHON_AI_API.md`](docs/PYTHON_AI_API.md).
 
+## Deploy on Render (free)
+
+Render has **Postgres** (not MySQL). This repo includes `render.yaml` + Postgres schema.
+
+1. Push this repo to GitHub.
+2. In Render: **New** → **Blueprint** → connect the GitHub repo (uses `render.yaml`).
+3. Apply the blueprint (creates `ailab-web`, `ailab-ai`, and free Postgres).
+4. Wait until both web services are Live, then open:
+   `https://ailab-web-XXXX.onrender.com/install.php`
+5. Log in with `manager` / `password123`, then remove or protect `install.php`.
+
+Free services sleep after idle time — first load can take ~30–60s.
+
+### Manual (same screen you opened)
+
+If not using Blueprint:
+1. **Postgres** → New Postgres (free)
+2. **Web Services** → Docker, root `Dockerfile` (PHP app); link `DATABASE_URL`
+3. **Web Services** → Docker, root dir `/ai` (AI service)
+4. On PHP service set `AI_SERVICE_URL` to the AI service URL
+
+## Deploy on Railway (MySQL-friendly)
+
+1. New Project → Deploy from GitHub.
+2. Add **MySQL**, plus two services: web (`/`) and ai (`/ai`).
+3. Link MySQL vars to web; set `AI_SERVICE_URL` to the AI public URL.
+4. Open `/install.php` once.
+
+Local XAMPP still works unchanged when hosted env vars are not set.
+
 ## CAP corrections
 
 Document cleanup notes for the thesis CAP: [`docs/CAP_CORRECTIONS.md`](docs/CAP_CORRECTIONS.md).
