@@ -47,7 +47,10 @@ $pageTitle = 'Login — AI-LIS';
             <button class="btn" type="submit">Log In</button>
         </form>
         <p class="sub" style="margin-top:1rem;font-size:0.85rem">
-            Demo: manager / medtech / staff — password <code>password123</code>
+            Demo logins (password <code>password123</code>):<br>
+            <strong>staff</strong> — front desk ·
+            <strong>medtech</strong> — lab bench ·
+            <strong>manager</strong> — oversight
         </p>
     </div>
 </div>

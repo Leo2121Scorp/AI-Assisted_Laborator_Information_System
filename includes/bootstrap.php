@@ -83,6 +83,19 @@ function db_driver(): string
     return (string) ((require __DIR__ . '/../config/database.php')['driver'] ?? 'mysql');
 }
 
+/**
+ * Portable ORDER BY priority list (replaces MySQL FIELD()).
+ * Example: sql_order_by_list('s.status', ['missing','delayed','pending'])
+ */
+function sql_order_by_list(string $expression, array $values): string
+{
+    $parts = [];
+    foreach (array_values($values) as $i => $value) {
+        $parts[] = 'WHEN ' . db()->quote((string) $value) . ' THEN ' . ($i + 1);
+    }
+    return 'CASE ' . $expression . ' ' . implode(' ', $parts) . ' ELSE ' . (count($values) + 1) . ' END';
+}
+
 function app_config(?string $key = null, $default = null)
 {
     static $cfg = null;

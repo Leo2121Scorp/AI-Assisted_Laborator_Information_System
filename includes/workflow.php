@@ -154,17 +154,32 @@ function encode_and_validate_result(int $resultId, array $inputs): array
         $ai = ai_predict($aiPayload);
 
         $pdo->prepare('DELETE FROM ai_flags WHERE lab_result_id = ?')->execute([$resultId]);
-        $pdo->prepare(
-            'INSERT INTO ai_flags (lab_result_id, is_anomaly, score, warning_message, model_version, raw_response)
-             VALUES (?, ?, ?, ?, ?, ?)'
-        )->execute([
-            $resultId,
-            $ai['is_anomaly'] ? 1 : 0,
-            $ai['score'],
-            $ai['warning_message'],
-            $ai['model_version'],
-            $ai['raw'] ? json_encode($ai['raw']) : json_encode($ai),
-        ]);
+        $rawJson = $ai['raw'] ? json_encode($ai['raw']) : json_encode($ai);
+        if (db_driver() === 'pgsql') {
+            $pdo->prepare(
+                'INSERT INTO ai_flags (lab_result_id, is_anomaly, score, warning_message, model_version, raw_response)
+                 VALUES (?, ?, ?, ?, ?, CAST(? AS jsonb))'
+            )->execute([
+                $resultId,
+                $ai['is_anomaly'] ? 1 : 0,
+                $ai['score'],
+                $ai['warning_message'],
+                $ai['model_version'],
+                $rawJson,
+            ]);
+        } else {
+            $pdo->prepare(
+                'INSERT INTO ai_flags (lab_result_id, is_anomaly, score, warning_message, model_version, raw_response)
+                 VALUES (?, ?, ?, ?, ?, ?)'
+            )->execute([
+                $resultId,
+                $ai['is_anomaly'] ? 1 : 0,
+                $ai['score'],
+                $ai['warning_message'],
+                $ai['model_version'],
+                $rawJson,
+            ]);
+        }
 
         $aiFlagged = !empty($ai['is_anomaly']) || !$ai['ok'] ? 1 : 0;
         $pdo->prepare(

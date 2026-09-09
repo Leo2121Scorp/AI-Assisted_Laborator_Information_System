@@ -20,36 +20,45 @@ $pageTitle = 'Patients — AI-LIS';
 require __DIR__ . '/../includes/header.php';
 ?>
 <div class="card">
-    <h1>Patients</h1>
-    <form method="get" class="form-row inline">
+    <div class="card-head">
         <div>
-            <label>Search</label>
-            <input name="q" value="<?= e($q) ?>" placeholder="Code, name, contact">
+            <h1>Patients</h1>
+            <p class="muted">Register and find patients quickly by code, name, or contact.</p>
         </div>
-        <div style="align-self:end">
-            <button class="btn" type="submit">Search</button>
-            <a class="btn btn-secondary" href="<?= e(base_url('patients/create.php')) ?>">Register patient</a>
-        </div>
+        <a class="btn" href="<?= e(base_url('patients/create.php')) ?>">Register patient</a>
+    </div>
+    <form method="get" class="toolbar-form" role="search">
+        <input name="q" value="<?= e($q) ?>" placeholder="Search code, name, or contact…"<?= $q === '' ? ' autofocus' : '' ?>>
+        <button class="btn" type="submit">Search</button>
+        <?php if ($q !== ''): ?>
+            <a class="btn btn-secondary" href="<?= e(base_url('patients/index.php')) ?>">Clear</a>
+        <?php endif; ?>
     </form>
 </div>
 <div class="card">
-    <table>
-        <thead>
-        <tr><th>Code</th><th>Name</th><th>Sex</th><th>Age</th><th>Contact</th><th></th></tr>
-        </thead>
-        <tbody>
-        <?php foreach ($patients as $p): ?>
-            <tr>
-                <td><?= e($p['patient_code']) ?></td>
-                <td><?= e($p['last_name'] . ', ' . $p['first_name']) ?></td>
-                <td><?= e($p['sex']) ?></td>
-                <td><?= patient_age($p['birth_date']) ?></td>
-                <td><?= e($p['contact_number']) ?></td>
-                <td><a href="<?= e(base_url('patients/view.php?id=' . $p['id'])) ?>">View</a></td>
-            </tr>
-        <?php endforeach; ?>
-        <?php if (!$patients): ?><tr><td colspan="6">No patients found.</td></tr><?php endif; ?>
-        </tbody>
-    </table>
+    <?php if (!$patients): ?>
+        <div class="empty-state">
+            <p><?= $q !== '' ? 'No patients match your search.' : 'No patients yet. Register the first patient to start a lab request.' ?></p>
+            <a class="btn" href="<?= e(base_url('patients/create.php')) ?>">Register patient</a>
+        </div>
+    <?php else: ?>
+        <table>
+            <thead>
+            <tr><th>Code</th><th>Name</th><th>Sex</th><th>Age</th><th>Contact</th><th></th></tr>
+            </thead>
+            <tbody>
+            <?php foreach ($patients as $p): ?>
+                <tr>
+                    <td><?= e($p['patient_code']) ?></td>
+                    <td><?= e($p['last_name'] . ', ' . $p['first_name']) ?></td>
+                    <td><?= e($p['sex']) ?></td>
+                    <td><?= patient_age($p['birth_date']) ?></td>
+                    <td><?= e($p['contact_number']) ?></td>
+                    <td><a class="btn btn-small btn-secondary" href="<?= e(base_url('patients/view.php?id=' . $p['id'])) ?>">View</a></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
 </div>
 <?php require __DIR__ . '/../includes/footer.php'; ?>

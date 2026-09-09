@@ -29,6 +29,70 @@ function user_role(): ?string
     return $user['role'] ?? null;
 }
 
+function role_label(?string $role = null): string
+{
+    $role = $role ?? user_role();
+    return match ($role) {
+        ROLE_MANAGER => 'Laboratory Manager',
+        ROLE_MED_TECH => 'Medical Technologist',
+        ROLE_STAFF => 'Administrative Staff',
+        default => $role ? ucwords(str_replace('_', ' ', $role)) : 'Guest',
+    };
+}
+
+function role_short_label(?string $role = null): string
+{
+    $role = $role ?? user_role();
+    return match ($role) {
+        ROLE_MANAGER => 'Manager',
+        ROLE_MED_TECH => 'MedTech',
+        ROLE_STAFF => 'Staff',
+        default => 'User',
+    };
+}
+
+/** Current top-nav key for active link highlighting. */
+function current_nav_key(): string
+{
+    $script = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    if (str_contains($script, '/patients/')) {
+        return 'patients';
+    }
+    if (str_contains($script, '/requests/')) {
+        return 'requests';
+    }
+    if (str_contains($script, '/specimens/')) {
+        return 'specimens';
+    }
+    if (str_contains($script, '/results/')) {
+        return 'results';
+    }
+    if (str_contains($script, '/reports/')) {
+        return 'reports';
+    }
+    if (str_contains($script, '/audit/')) {
+        return 'audit';
+    }
+    if (str_contains($script, '/backup/')) {
+        return 'backup';
+    }
+    if (str_contains($script, '/admin/ranges')) {
+        return 'ranges';
+    }
+    if (str_contains($script, '/admin/users')) {
+        return 'users';
+    }
+    if (str_ends_with($script, '/dashboard.php') || str_ends_with($script, 'dashboard.php')) {
+        return 'dashboard';
+    }
+    return '';
+}
+
+function nav_link_class(string $key, string $current): string
+{
+    return $key === $current ? ' class="is-active"' : '';
+}
+
 function has_role(string ...$roles): bool
 {
     $role = user_role();

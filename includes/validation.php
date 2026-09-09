@@ -81,7 +81,7 @@ function find_reference_range(int $labTestId, string $sex, int $age): ?array
             WHERE lab_test_id = ?
               AND age_min <= ? AND age_max >= ?
               AND (sex = ? OR sex = \'A\')
-            ORDER BY FIELD(sex, ?, \'A\')
+            ORDER BY CASE WHEN sex = ? THEN 1 WHEN sex = \'A\' THEN 2 ELSE 3 END
             LIMIT 1';
     $stmt = db()->prepare($sql);
     $stmt->execute([$labTestId, $age, $age, $sex, $sex]);

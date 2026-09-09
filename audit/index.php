@@ -24,16 +24,20 @@ require __DIR__ . '/../includes/header.php';
         <tr><th>When</th><th>User</th><th>Action</th><th>Entity</th><th>Details</th><th>IP</th></tr>
         </thead>
         <tbody>
-        <?php foreach ($rows as $r): ?>
-            <tr>
-                <td><?= e($r['created_at']) ?></td>
-                <td><?= e($r['full_name'] ?: ($r['username'] ?: 'system')) ?></td>
-                <td><?= e($r['action']) ?></td>
-                <td><?= e(($r['entity_type'] ?: '') . ($r['entity_id'] ? '#' . $r['entity_id'] : '')) ?></td>
-                <td><?= e($r['details']) ?></td>
-                <td><?= e($r['ip_address']) ?></td>
-            </tr>
-        <?php endforeach; ?>
+        <?php if (!$rows): ?>
+            <tr><td colspan="6"><div class="empty-state"><p>No audit events yet.</p></div></td></tr>
+        <?php else: ?>
+            <?php foreach ($rows as $r): ?>
+                <tr>
+                    <td><?= e($r['created_at']) ?></td>
+                    <td><?= e($r['full_name'] ?: ($r['username'] ?: 'system')) ?></td>
+                    <td><?= e($r['action']) ?></td>
+                    <td><?= e(($r['entity_type'] ?: '') . ($r['entity_id'] ? '#' . $r['entity_id'] : '')) ?></td>
+                    <td><?= e($r['details']) ?></td>
+                    <td><?= e($r['ip_address']) ?></td>
+                </tr>
+            <?php endforeach; ?>
+        <?php endif; ?>
         </tbody>
     </table>
 </div>
