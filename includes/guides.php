@@ -70,7 +70,7 @@ function guide_for_role(?string $role = null): array
                 ],
                 [
                     'title' => 'Review AI & approve',
-                    'body' => 'After validation, Isolation Forest may mark ai_flagged. This is a soft warning only — never auto-approve. Review, then Approve or Reject back for re-entry.',
+                    'body' => 'After validation, Isolation Forest may mark ai_flagged. This is a soft warning only — never auto-approve. Use the Ask AI chat (OpenRouter) for review tips, then Approve or Reject back for re-entry.',
                     'demo' => 'ai-review',
                 ],
                 [
@@ -93,7 +93,7 @@ function guide_for_role(?string $role = null): array
                 ],
                 [
                     'title' => 'Watch the dashboard',
-                    'body' => 'Start each shift here: open requests, active specimens, awaiting review, AI flags, and delay alerts. Click any stat card to jump straight to the filtered list.',
+                    'body' => 'Start each shift here: open requests, active specimens, awaiting review, AI flags, and delay alerts. Use Ask AI (OpenRouter) anytime for workflow help. Click any stat card to jump to the filtered list.',
                     'demo' => 'dashboard-watch',
                     'cta' => ['label' => 'Open Dashboard', 'href' => 'dashboard.php'],
                 ],

@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   initRoleGuide();
+  initAiChat();
 });
 
 function initRoleGuide() {
@@ -123,5 +124,115 @@ function initRoleGuide() {
   // Auto-open once per role on first login session visit
   if (!localStorageGet(storageKey)) {
     window.setTimeout(function () { openGuide(false); }, 450);
+  }
+}
+
+function initAiChat() {
+  var root = document.getElementById('ai-chat');
+  if (!root) return;
+
+  var panel = document.getElementById('ai-chat-panel');
+  var toggle = document.getElementById('ai-chat-toggle');
+  var closeBtn = document.getElementById('ai-chat-close');
+  var form = document.getElementById('ai-chat-form');
+  var input = document.getElementById('ai-chat-input');
+  var messages = document.getElementById('ai-chat-messages');
+  var sendBtn = document.getElementById('ai-chat-send');
+  var endpoint = root.getAttribute('data-chat-url') || '';
+  var history = [];
+  var busy = false;
+
+  function setOpen(open) {
+    if (!panel || !toggle) return;
+    panel.hidden = !open;
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    root.classList.toggle('is-open', open);
+    if (open && input) input.focus();
+  }
+
+  function appendBubble(text, kind) {
+    var el = document.createElement('div');
+    el.className = 'ai-chat-bubble ai-chat-' + kind;
+    el.textContent = text;
+    messages.appendChild(el);
+    messages.scrollTop = messages.scrollHeight;
+    return el;
+  }
+
+  if (toggle) {
+    toggle.addEventListener('click', function () {
+      setOpen(panel.hidden);
+    });
+  }
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function () { setOpen(false); });
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && root.classList.contains('is-open')) {
+      setOpen(false);
+    }
+  });
+
+  if (!form) return;
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (busy || !input) return;
+    var text = (input.value || '').trim();
+    if (!text) return;
+
+    appendBubble(text, 'user');
+    history.push({ role: 'user', content: text });
+    input.value = '';
+    busy = true;
+    if (sendBtn) sendBtn.disabled = true;
+    var thinking = appendBubble('Thinking…', 'bot');
+    thinking.classList.add('is-pending');
+
+    fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ message: text, history: history.slice(0, -1) })
+    })
+      .then(function (res) {
+        return res.json().then(function (data) {
+          return { okHttp: res.ok, data: data };
+        });
+      })
+      .then(function (result) {
+        thinking.remove();
+        var data = result.data || {};
+        if (data.ok && data.reply) {
+          appendBubble(data.reply, 'bot');
+          history.push({ role: 'assistant', content: data.reply });
+          if (history.length > 24) history = history.slice(-24);
+        } else {
+          appendBubble(data.detail || 'Sorry — the assistant could not reply.', 'bot');
+        }
+      })
+      .catch(function () {
+        thinking.remove();
+        appendBubble('Network error talking to the assistant.', 'bot');
+      })
+      .finally(function () {
+        busy = false;
+        if (sendBtn) sendBtn.disabled = false;
+        if (input) input.focus();
+      });
+  });
+
+  if (input) {
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        form.requestSubmit();
+      }
+    });
+  }
+
+  var dashOpen = document.getElementById('dashboard-open-ai-chat');
+  if (dashOpen) {
+    dashOpen.addEventListener('click', function () { setOpen(true); });
   }
 }

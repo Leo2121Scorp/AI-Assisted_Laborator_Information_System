@@ -124,7 +124,7 @@ function base_url(string $path = ''): string
     // Project lives under /AI-Assisted_Laborator_Information_System/public or project root
     $dir = str_replace('\\', '/', dirname($script));
     // If in a subdirectory (patients, results, etc.), go up to app root URL
-    if (preg_match('#/(patients|requests|specimens|results|reports|admin|audit|backup)$#', $dir)) {
+    if (preg_match('#/(patients|requests|specimens|results|reports|admin|audit|backup|api)$#', $dir)) {
         $dir = dirname($dir);
     }
     $base = rtrim($dir, '/');

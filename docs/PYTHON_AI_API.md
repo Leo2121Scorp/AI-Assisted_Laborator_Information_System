@@ -75,6 +75,37 @@ Anomaly example:
 
 HTTP 400 for bad input; 503 if model not loaded; 500 for unexpected errors. PHP treats AI failure as a soft warning (`AI service unavailable — manual review required`) and still allows MT review.
 
+## OpenRouter chat (`POST /chat`)
+
+Manager / MedTech assistant powered by [OpenRouter](https://openrouter.ai/). Requires `OPENROUTER_API_KEY` (OS env or `config/env.php`).
+
+Request:
+
+```json
+{
+  "message": "What does an AI warning mean?",
+  "role": "med_tech",
+  "history": [
+    {"role": "user", "content": "previous"},
+    {"role": "assistant", "content": "previous reply"}
+  ]
+}
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "reply": "…",
+  "model": "openai/gpt-4o-mini"
+}
+```
+
+PHP UI calls `api/chat.php`, which prefers Python `/chat` and falls back to a direct OpenRouter request.
+
+When `/predict` flags an anomaly, the service may append a short OpenRouter advisory note to `warning_message` (still never auto-approves).
+
 ## Training data assumptions
 
 | Assumption | Value |

@@ -127,6 +127,7 @@ function can(string $permission): bool
         'view_audit' => [ROLE_MANAGER, ROLE_MED_TECH],
         'backup' => [ROLE_MANAGER],
         'view_ai' => [ROLE_MANAGER, ROLE_MED_TECH],
+        'use_ai_chat' => [ROLE_MANAGER, ROLE_MED_TECH],
     ];
     if (!isset($map[$permission])) {
         return false;

@@ -13,6 +13,16 @@ services:
     envVars:
       - key: PYTHONUNBUFFERED
         value: "1"
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: openai/gpt-4o-mini
+      - key: BACKUP_AI_API_KEY
+        sync: false
+      - key: BACKUP_AI_BASE_URL
+        value: https://router.bynara.id/v1
+      - key: BACKUP_AI_MODEL
+        value: auto/bynara
 
   - type: web
     name: ailab-web
@@ -23,6 +33,16 @@ services:
     envVars:
       - key: DATABASE_URL
         sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: openai/gpt-4o-mini
+      - key: BACKUP_AI_API_KEY
+        sync: false
+      - key: BACKUP_AI_BASE_URL
+        value: https://router.bynara.id/v1
+      - key: BACKUP_AI_MODEL
+        value: auto/bynara
       - key: AI_SERVICE_URL
         fromService:
           name: ailab-ai

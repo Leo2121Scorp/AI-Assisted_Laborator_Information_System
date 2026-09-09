@@ -143,6 +143,31 @@ $guideStorageKey = 'ailis_guide_seen_' . (user_role() ?? 'guest');
     </div>
 </div>
 <?php endif; ?>
+<?php if (is_logged_in() && can('use_ai_chat')): ?>
+<aside class="ai-chat" id="ai-chat" data-chat-url="<?= e(base_url('api/chat.php')) ?>" aria-live="polite">
+    <button type="button" class="ai-chat-toggle" id="ai-chat-toggle" aria-expanded="false" aria-controls="ai-chat-panel" title="Open AI assistant">
+        <span class="ai-chat-toggle-icon" aria-hidden="true">AI</span>
+        <span class="ai-chat-toggle-label">Ask AI</span>
+    </button>
+    <div class="ai-chat-panel" id="ai-chat-panel" hidden>
+        <header class="ai-chat-head">
+            <div>
+                <strong>LIS Assistant</strong>
+                <p>OpenRouter · Manager &amp; MedTech</p>
+            </div>
+            <button type="button" class="ai-chat-close" id="ai-chat-close" aria-label="Close assistant">&times;</button>
+        </header>
+        <div class="ai-chat-messages" id="ai-chat-messages">
+            <div class="ai-chat-bubble ai-chat-bot">Hi — I can help with workflow, AI warnings, ranges, and lab ops. Ask a question.</div>
+        </div>
+        <form class="ai-chat-form" id="ai-chat-form">
+            <label class="sr-only" for="ai-chat-input">Message</label>
+            <textarea id="ai-chat-input" rows="2" maxlength="4000" placeholder="e.g. What does an AI warning mean?" required></textarea>
+            <button type="submit" class="btn btn-small" id="ai-chat-send">Send</button>
+        </form>
+    </div>
+</aside>
+<?php endif; ?>
 <script src="<?= e(base_url('assets/js/app.js')) ?>"></script>
 </body>
 </html>

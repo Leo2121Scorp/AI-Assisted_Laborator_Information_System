@@ -35,6 +35,7 @@ $delayed->execute([$slaHours]);
 $delayedRows = $delayed->fetchAll();
 
 $aiHealth = ai_health();
+$chatReady = openrouter_configured();
 
 $quickActions = match ($role) {
     ROLE_STAFF => [
@@ -81,11 +82,22 @@ require __DIR__ . '/includes/header.php';
             <?php else: ?>
                 <span class="badge badge-warning">offline (manual review still available)</span>
             <?php endif; ?>
+            <?php if (can('use_ai_chat')): ?>
+                · OpenRouter chat:
+                <?php if ($chatReady): ?>
+                    <span class="badge badge-ok">ready</span>
+                <?php else: ?>
+                    <span class="badge badge-warning">not configured</span>
+                <?php endif; ?>
+            <?php endif; ?>
         </p>
     </div>
     <div class="dashboard-hero-actions">
         <button type="button" class="btn" data-guide-open>Open <?= e(role_short_label()) ?> guide</button>
         <button type="button" class="btn btn-secondary" data-guide-open data-guide-restart>Replay demo</button>
+        <?php if (can('use_ai_chat')): ?>
+            <button type="button" class="btn btn-secondary" id="dashboard-open-ai-chat">Ask AI assistant</button>
+        <?php endif; ?>
     </div>
 </div>
 
