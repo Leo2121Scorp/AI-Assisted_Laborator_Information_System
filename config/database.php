@@ -42,7 +42,12 @@ $password = ailab_env('MYSQLPASSWORD') ?? ailab_env('DB_PASSWORD') ?? '';
 // Render Postgres / Railway / generic DATABASE_URL
 $url = ailab_env('DATABASE_URL') ?? ailab_env('MYSQL_URL');
 if (is_string($url) && $url !== '') {
-    // Render sometimes uses postgres:// — normalize for parse_url
+    // Fix common copy mistake: missing "@" before Render host (dpg-...)
+    // e.g. postgresql://user:passdpg-xxx/db  →  postgresql://user:pass@dpg-xxx/db
+    if (preg_match('#^(postgres(?:ql)?://[^:/]+):([^@/]+)(dpg-[^/]+)(/.*)?$#i', $url, $m)) {
+        $url = $m[1] . ':' . $m[2] . '@' . $m[3] . ($m[4] ?? '');
+    }
+
     $parts = parse_url($url);
     if ($parts !== false && isset($parts['scheme'])) {
         $scheme = strtolower($parts['scheme']);
@@ -57,7 +62,6 @@ if (is_string($url) && $url !== '') {
         $username = isset($parts['user']) ? urldecode($parts['user']) : $username;
         $password = isset($parts['pass']) ? urldecode($parts['pass']) : $password;
         $dbname = isset($parts['path']) ? ltrim($parts['path'], '/') : $dbname;
-        // Strip query params from db name if present
         if (str_contains($dbname, '?')) {
             $dbname = strstr($dbname, '?', true);
         }
