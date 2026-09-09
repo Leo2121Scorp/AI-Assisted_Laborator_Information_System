@@ -787,6 +787,9 @@ textarea { min-height: 80px; }
   overflow: hidden;
   animation: guideRise 0.22s ease;
 }
+.ai-chat-panel[hidden] {
+  display: none !important;
+}
 .ai-chat-head {
   display: flex;
   justify-content: space-between;
@@ -808,6 +811,12 @@ textarea { min-height: 80px; }
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+.ai-chat-close:hover {
+  background: rgba(255, 255, 255, 0.28);
 }
 .ai-chat-messages {
   flex: 1;

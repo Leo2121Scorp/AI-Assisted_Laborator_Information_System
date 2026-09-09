@@ -144,7 +144,11 @@ function initAiChat() {
 
   function setOpen(open) {
     if (!panel || !toggle) return;
-    panel.hidden = !open;
+    if (open) {
+      panel.removeAttribute('hidden');
+    } else {
+      panel.setAttribute('hidden', '');
+    }
     toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     root.classList.toggle('is-open', open);
     if (open && input) input.focus();
@@ -161,11 +165,15 @@ function initAiChat() {
 
   if (toggle) {
     toggle.addEventListener('click', function () {
-      setOpen(panel.hidden);
+      setOpen(panel.hasAttribute('hidden'));
     });
   }
   if (closeBtn) {
-    closeBtn.addEventListener('click', function () { setOpen(false); });
+    closeBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      setOpen(false);
+    });
   }
 
   document.addEventListener('keydown', function (e) {
