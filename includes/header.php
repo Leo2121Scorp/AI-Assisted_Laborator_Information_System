@@ -13,15 +13,19 @@ $navKey = current_nav_key();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?></title>
+    <link rel="icon" type="image/png" href="<?= e(base_url('assets/img/clinic-logo.png')) ?>">
     <link rel="stylesheet" href="<?= e(base_url('assets/css/style.css')) ?>">
 </head>
 <body>
 <?php if ($user): ?>
 <header class="topbar">
-    <div class="brand">
-        <strong>AI-LIS</strong>
-        <span><?= e(app_config('lab_name')) ?></span>
-    </div>
+    <a class="brand" href="<?= e(base_url('dashboard.php')) ?>">
+        <img class="brand-logo" src="<?= e(base_url('assets/img/clinic-logo.png')) ?>" alt="Lagman Qualicare logo" width="42" height="42">
+        <span class="brand-text">
+            <strong>AI-LIS</strong>
+            <span><?= e(app_config('lab_name')) ?></span>
+        </span>
+    </a>
     <nav class="nav" aria-label="Main">
         <a href="<?= e(base_url('dashboard.php')) ?>"<?= nav_link_class('dashboard', $navKey) ?>>Dashboard</a>
         <?php if (can('patients')): ?><a href="<?= e(base_url('patients/index.php')) ?>"<?= nav_link_class('patients', $navKey) ?>>Patients</a><?php endif; ?>

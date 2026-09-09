@@ -27,11 +27,13 @@ $pageTitle = 'Login — AI-LIS';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?></title>
+    <link rel="icon" type="image/png" href="<?= e(base_url('assets/img/clinic-logo.png')) ?>">
     <link rel="stylesheet" href="<?= e(base_url('assets/css/style.css')) ?>">
 </head>
 <body>
 <div class="login-wrap">
     <div class="card login-card">
+        <img class="login-logo" src="<?= e(base_url('assets/img/clinic-logo.png')) ?>" alt="Lagman Qualicare logo" width="96" height="96">
         <h1>AI-Assisted LIS</h1>
         <p class="sub"><?= e(app_config('lab_name')) ?></p>
         <?php if ($error): ?><div class="alert alert-error"><?= e($error) ?></div><?php endif; ?>
