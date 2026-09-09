@@ -1,7 +1,7 @@
 <?php
 /**
  * One-time installer: creates schema, seed data, and demo users.
- * Open in browser once, then delete or protect this file.
+ * Safe to re-run: if tables already exist, only refreshes demo users.
  */
 declare(strict_types=1);
 
@@ -53,6 +53,22 @@ function exec_sql_file(PDO $pdo, string $path, array &$messages, bool $skipCreat
     $messages[] = basename($path) . ' executed.';
 }
 
+function table_exists(PDO $pdo, string $table, string $driver): bool
+{
+    if ($driver === 'pgsql') {
+        $stmt = $pdo->prepare(
+            "SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = ? LIMIT 1"
+        );
+        $stmt->execute([$table]);
+        return (bool) $stmt->fetchColumn();
+    }
+    $stmt = $pdo->prepare(
+        'SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ? LIMIT 1'
+    );
+    $stmt->execute([$table]);
+    return (bool) $stmt->fetchColumn();
+}
+
 try {
     $driver = $config['driver'] ?? 'mysql';
     $managedMysql = (getenv('MYSQLHOST') !== false && getenv('MYSQLHOST') !== '')
@@ -68,8 +84,13 @@ try {
         $pdo = new PDO($dsn, $config['username'], $config['password'], [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         ]);
-        exec_sql_file($pdo, __DIR__ . '/database/schema.postgres.sql', $messages, true);
-        exec_sql_file($pdo, __DIR__ . '/database/seed.postgres.sql', $messages, true);
+        $already = table_exists($pdo, 'users', 'pgsql');
+        if ($already) {
+            $messages[] = 'Database already installed — skipping schema/seed.';
+        } else {
+            exec_sql_file($pdo, __DIR__ . '/database/schema.postgres.sql', $messages, true);
+            exec_sql_file($pdo, __DIR__ . '/database/seed.postgres.sql', $messages, true);
+        }
     } elseif ($managedMysql) {
         $dsn = sprintf(
             'mysql:host=%s;port=%d;dbname=%s;charset=%s',
@@ -81,16 +102,32 @@ try {
         $pdo = new PDO($dsn, $config['username'], $config['password'], [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         ]);
-        exec_sql_file($pdo, __DIR__ . '/database/schema.sql', $messages, true);
-        exec_sql_file($pdo, __DIR__ . '/database/seed.sql', $messages, true);
+        $already = table_exists($pdo, 'users', 'mysql');
+        if ($already) {
+            $messages[] = 'Database already installed — skipping schema/seed.';
+        } else {
+            exec_sql_file($pdo, __DIR__ . '/database/schema.sql', $messages, true);
+            exec_sql_file($pdo, __DIR__ . '/database/seed.sql', $messages, true);
+        }
     } else {
         $dsn = sprintf('mysql:host=%s;port=%d;charset=%s', $config['host'], $config['port'], $config['charset']);
         $pdo = new PDO($dsn, $config['username'], $config['password'], [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         ]);
-        exec_sql_file($pdo, __DIR__ . '/database/schema.sql', $messages, false);
-        exec_sql_file($pdo, __DIR__ . '/database/seed.sql', $messages, false);
+        // Ensure DB exists, then select it before checking tables
+        $pdo->exec(
+            'CREATE DATABASE IF NOT EXISTS `' . str_replace('`', '``', $config['dbname']) . '`
+             CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
+        );
         $pdo->exec('USE `' . str_replace('`', '``', $config['dbname']) . '`');
+        $already = table_exists($pdo, 'users', 'mysql');
+        if ($already) {
+            $messages[] = 'Database already installed — skipping schema/seed.';
+        } else {
+            exec_sql_file($pdo, __DIR__ . '/database/schema.sql', $messages, false);
+            exec_sql_file($pdo, __DIR__ . '/database/seed.sql', $messages, false);
+            $pdo->exec('USE `' . str_replace('`', '``', $config['dbname']) . '`');
+        }
     }
 
     $hash = password_hash('password123', PASSWORD_DEFAULT);
@@ -99,7 +136,7 @@ try {
     $ins->execute(['manager', $hash, 'Laboratory Manager', 'manager']);
     $ins->execute(['medtech', $hash, 'Medical Technologist', 'med_tech']);
     $ins->execute(['staff', $hash, 'Administrative Staff', 'staff']);
-    $messages[] = 'Demo users created (password: password123).';
+    $messages[] = 'Demo users ready (password: password123).';
 
     if (!is_dir(__DIR__ . '/backups')) {
         mkdir(__DIR__ . '/backups', 0775, true);
