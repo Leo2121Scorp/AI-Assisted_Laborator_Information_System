@@ -3,31 +3,33 @@
  * Database configuration — local XAMPP (MySQL) defaults; env overrides for Railway/Render.
  */
 
-/** @return string|null */
-function ailab_env(string $key): ?string
-{
-    static $fileEnv = null;
-    if ($fileEnv === null) {
-        $path = __DIR__ . '/env.php';
-        $fileEnv = is_file($path) ? (require $path) : [];
-        if (!is_array($fileEnv)) {
-            $fileEnv = [];
+if (!function_exists('ailab_env')) {
+    /** @return string|null */
+    function ailab_env(string $key): ?string
+    {
+        static $fileEnv = null;
+        if ($fileEnv === null) {
+            $path = __DIR__ . '/env.php';
+            $fileEnv = is_file($path) ? (require $path) : [];
+            if (!is_array($fileEnv)) {
+                $fileEnv = [];
+            }
         }
+        if (isset($fileEnv[$key]) && $fileEnv[$key] !== '' && $fileEnv[$key] !== null) {
+            return (string) $fileEnv[$key];
+        }
+        $v = getenv($key);
+        if ($v !== false && $v !== '') {
+            return $v;
+        }
+        if (isset($_ENV[$key]) && $_ENV[$key] !== '') {
+            return (string) $_ENV[$key];
+        }
+        if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') {
+            return (string) $_SERVER[$key];
+        }
+        return null;
     }
-    if (isset($fileEnv[$key]) && $fileEnv[$key] !== '' && $fileEnv[$key] !== null) {
-        return (string) $fileEnv[$key];
-    }
-    $v = getenv($key);
-    if ($v !== false && $v !== '') {
-        return $v;
-    }
-    if (isset($_ENV[$key]) && $_ENV[$key] !== '') {
-        return (string) $_ENV[$key];
-    }
-    if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') {
-        return (string) $_SERVER[$key];
-    }
-    return null;
 }
 
 $driver = 'mysql';
