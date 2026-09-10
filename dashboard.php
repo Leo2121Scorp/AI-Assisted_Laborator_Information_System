@@ -93,10 +93,10 @@ require __DIR__ . '/includes/header.php';
         </p>
     </div>
     <div class="dashboard-hero-actions">
-        <button type="button" class="btn" data-guide-open>Open <?= e(role_short_label()) ?> guide</button>
-        <button type="button" class="btn btn-secondary" data-guide-open data-guide-restart>Replay demo</button>
+        <button type="button" class="btn btn-small" data-guide-open>Open <?= e(role_short_label()) ?> guide</button>
+        <button type="button" class="btn btn-small btn-secondary" data-guide-open data-guide-restart>Replay demo</button>
         <?php if (can('use_ai_chat')): ?>
-            <button type="button" class="btn btn-secondary" id="dashboard-open-ai-chat">Ask AI assistant</button>
+            <button type="button" class="btn btn-small btn-secondary" id="dashboard-open-ai-chat">Ask AI assistant</button>
         <?php endif; ?>
     </div>
 </div>

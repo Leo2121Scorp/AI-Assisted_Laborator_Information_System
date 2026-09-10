@@ -188,7 +188,7 @@ a:hover { text-decoration: underline; }
   align-items: flex-start;
 }
 .dashboard-hero-text { min-width: 0; flex: 1 1 16rem; }
-.dashboard-hero-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.dashboard-hero-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .quick-actions-card h2 { margin-bottom: 0.75rem; }
 .quick-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
@@ -1077,15 +1077,26 @@ body.ai-chat-open { overflow: hidden; }
   .card { padding: 1rem 0.9rem; overflow: hidden; }
   .card h1 { font-size: 1.35rem; }
   .card-head { align-items: stretch; }
-  .card-head > .btn,
+  .card-head > .btn { width: 100%; text-align: center; }
   .dashboard-hero-actions { width: 100%; }
-  .dashboard-hero-actions .btn,
+  .dashboard-hero-actions .btn {
+    flex: 0 1 auto;
+    width: auto;
+    min-height: 0;
+    padding: 0.32rem 0.7rem;
+    font-size: 0.82rem;
+    line-height: 1.2;
+  }
   .quick-actions .btn,
   .card-head > .btn {
-    flex: 1 1 100%;
+    flex: 1 1 auto;
     text-align: center;
   }
-  .quick-actions .btn { min-height: 2.75rem; }
+  .quick-actions .btn {
+    min-height: 2.2rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.88rem;
+  }
   .chip {
     min-height: 2.4rem;
     display: inline-flex;
