@@ -17,7 +17,8 @@ AI-Assisted Laboratory Information System — Lagman Qualicare Multispecialty an
 | Login / dashboard | Y | Y | Y |
 | Manage users | Y | — | — |
 | Manage reference ranges | Y | — | — |
-| Register / edit patients | Y | Y | Y |
+| Register patients | Y | Y | Y |
+| Edit / delete patients | Y | — | — |
 | Create laboratory requests | Y | Y | Y |
 | Collect specimen / update early statuses | Y | Y | Y |
 | Update processing / completed specimen | Y | Y | — |

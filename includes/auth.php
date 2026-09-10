@@ -117,6 +117,8 @@ function can(string $permission): bool
         'manage_users' => [ROLE_MANAGER],
         'manage_ranges' => [ROLE_MANAGER],
         'patients' => [ROLE_MANAGER, ROLE_MED_TECH, ROLE_STAFF],
+        'edit_patients' => [ROLE_MANAGER],
+        'delete_patients' => [ROLE_MANAGER],
         'requests' => [ROLE_MANAGER, ROLE_MED_TECH, ROLE_STAFF],
         'specimen_collect' => [ROLE_MANAGER, ROLE_MED_TECH, ROLE_STAFF],
         'specimen_process' => [ROLE_MANAGER, ROLE_MED_TECH],

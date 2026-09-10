@@ -227,6 +227,14 @@ textarea { min-height: 80px; }
 .btn-small { padding: 0.3rem 0.65rem; font-size: 0.85rem; }
 .btn-secondary { background: #4a6072; }
 .btn-danger { background: var(--danger); }
+.btn-danger:hover { background: #7a1818; }
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  justify-content: flex-end;
+}
 .btn-amber { background: var(--amber); }
 .btn-ghost {
   background: rgba(255,255,255,0.14);

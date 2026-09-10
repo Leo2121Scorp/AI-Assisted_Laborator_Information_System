@@ -44,7 +44,7 @@ require __DIR__ . '/../includes/header.php';
     <?php else: ?>
         <table>
             <thead>
-            <tr><th>Code</th><th>Name</th><th>Sex</th><th>Age</th><th>Contact</th><th></th></tr>
+            <tr><th>Code</th><th>Name</th><th>Sex</th><th>Age</th><th>Contact</th><th>Actions</th></tr>
             </thead>
             <tbody>
             <?php foreach ($patients as $p): ?>
@@ -54,7 +54,17 @@ require __DIR__ . '/../includes/header.php';
                     <td><?= e($p['sex']) ?></td>
                     <td><?= patient_age($p['birth_date']) ?></td>
                     <td><?= e($p['contact_number']) ?></td>
-                    <td><a class="btn btn-small btn-secondary" href="<?= e(base_url('patients/view.php?id=' . $p['id'])) ?>">View</a></td>
+                    <td>
+                        <div class="row-actions">
+                            <a class="btn btn-small btn-secondary" href="<?= e(base_url('patients/view.php?id=' . $p['id'])) ?>">View</a>
+                            <?php if (can('edit_patients')): ?>
+                                <a class="btn btn-small" href="<?= e(base_url('patients/edit.php?id=' . $p['id'])) ?>">Edit</a>
+                            <?php endif; ?>
+                            <?php if (can('delete_patients')): ?>
+                                <a class="btn btn-small btn-danger" href="<?= e(base_url('patients/delete.php?id=' . $p['id'])) ?>">Delete</a>
+                            <?php endif; ?>
+                        </div>
+                    </td>
                 </tr>
             <?php endforeach; ?>
             </tbody>

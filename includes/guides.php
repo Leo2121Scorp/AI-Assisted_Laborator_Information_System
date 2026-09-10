@@ -88,7 +88,7 @@ function guide_for_role(?string $role = null): array
             'steps' => [
                 [
                     'title' => 'Full oversight',
-                    'body' => 'Managers can do everything MedTech and Staff can, plus Users, Reference Ranges, Backup, and Audit. Use the dashboard for delays, pending MT review, and AI warnings.',
+                    'body' => 'Managers can do everything MedTech and Staff can, plus Users, Reference Ranges, Backup, and Audit. Only managers can edit or delete patient records. Use the dashboard for delays, pending MT review, and AI warnings.',
                     'demo' => 'manager-path',
                 ],
                 [

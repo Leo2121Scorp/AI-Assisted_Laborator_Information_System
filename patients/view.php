@@ -33,6 +33,12 @@ require __DIR__ . '/../includes/header.php';
     <p><strong>Address:</strong> <?= e($patient['address'] ?: '—') ?></p>
     <div class="actions">
         <a class="btn" href="<?= e(base_url('requests/create.php?patient_id=' . $id)) ?>">Create laboratory request</a>
+        <?php if (can('edit_patients')): ?>
+            <a class="btn" href="<?= e(base_url('patients/edit.php?id=' . $id)) ?>">Edit</a>
+        <?php endif; ?>
+        <?php if (can('delete_patients')): ?>
+            <a class="btn btn-danger" href="<?= e(base_url('patients/delete.php?id=' . $id)) ?>">Delete</a>
+        <?php endif; ?>
         <a class="btn btn-secondary" href="<?= e(base_url('patients/index.php')) ?>">Back</a>
     </div>
 </div>
