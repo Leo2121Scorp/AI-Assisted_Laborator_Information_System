@@ -50,7 +50,7 @@ require __DIR__ . '/../includes/header.php';
 </div>
 <div class="card">
     <table>
-        <thead><tr><th>ID</th><th>Username</th><th>Name</th><th>Role</th><th>Active</th><th>Created</th></tr></thead>
+        <thead><tr><th>ID</th><th>Username</th><th>Name</th><th>Role</th><th>Active</th><th>Created</th><th>Actions</th></tr></thead>
         <tbody>
         <?php foreach ($users as $u): ?>
             <tr>
@@ -60,6 +60,12 @@ require __DIR__ . '/../includes/header.php';
                 <td><?= e($u['role']) ?></td>
                 <td><?= $u['is_active'] ? 'yes' : 'no' ?></td>
                 <td><?= e($u['created_at']) ?></td>
+                <td>
+                    <div class="row-actions">
+                        <a class="btn btn-small" href="<?= e(base_url('admin/user_edit.php?id=' . $u['id'])) ?>">Edit</a>
+                        <a class="btn btn-small btn-danger" href="<?= e(base_url('admin/user_delete.php?id=' . $u['id'])) ?>">Delete</a>
+                    </div>
+                </td>
             </tr>
         <?php endforeach; ?>
         </tbody>

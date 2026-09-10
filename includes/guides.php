@@ -99,7 +99,7 @@ function guide_for_role(?string $role = null): array
                 ],
                 [
                     'title' => 'Manage users & access',
-                    'body' => 'Users → create or deactivate accounts and assign Staff / MedTech / Manager roles. Only active users can sign in.',
+                    'body' => 'Users → create, edit, or delete accounts and assign Staff / MedTech / Manager roles. You cannot delete your own account or the last active manager. Only active users can sign in.',
                     'demo' => 'manage-users',
                     'cta' => ['label' => 'Manage Users', 'href' => 'admin/users.php'],
                 ],

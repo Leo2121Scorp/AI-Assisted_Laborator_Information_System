@@ -79,7 +79,7 @@ function current_nav_key(): string
     if (str_contains($script, '/admin/ranges')) {
         return 'ranges';
     }
-    if (str_contains($script, '/admin/users')) {
+    if (str_contains($script, '/admin/users') || str_contains($script, '/admin/user_')) {
         return 'users';
     }
     if (str_ends_with($script, '/dashboard.php') || str_ends_with($script, 'dashboard.php')) {
@@ -144,6 +144,20 @@ function require_permission(string $permission): void
         flash('error', 'You do not have permission for that action.');
         redirect('dashboard.php');
     }
+}
+
+function active_manager_count(): int
+{
+    return (int) db()->query(
+        "SELECT COUNT(*) FROM users WHERE role = 'manager' AND is_active = 1"
+    )->fetchColumn();
+}
+
+function is_last_active_manager(array $user): bool
+{
+    return ($user['role'] ?? '') === ROLE_MANAGER
+        && (int) ($user['is_active'] ?? 0) === 1
+        && active_manager_count() <= 1;
 }
 
 function attempt_login(string $username, string $password): bool
