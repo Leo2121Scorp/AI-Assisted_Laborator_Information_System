@@ -28,7 +28,7 @@ $pageTitle = 'Login — AI-LIS';
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title><?= e($pageTitle) ?></title>
     <link rel="icon" type="image/png" href="<?= e(base_url('assets/img/clinic-logo.png')) ?>">
-    <link rel="stylesheet" href="<?= e(base_url('assets/css/style.css')) ?>">
+    <link rel="stylesheet" href="<?= e(base_url('assets/css/style.css')) ?>?v=<?= (int) @filemtime(__DIR__ . '/assets/css/style.css') ?>">
 </head>
 <body>
 <div class="login-wrap">
