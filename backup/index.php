@@ -122,6 +122,7 @@ require __DIR__ . '/../includes/header.php';
 </div>
 <div class="card">
     <h2>Backup history</h2>
+    <div class="table-scroll">
     <table>
         <thead><tr><th>When</th><th>By</th><th>Status</th><th>Size</th><th>Message</th><th>Path</th></tr></thead>
         <tbody>
@@ -138,5 +139,6 @@ require __DIR__ . '/../includes/header.php';
         <?php if (!$history): ?><tr><td colspan="6">No backups yet.</td></tr><?php endif; ?>
         </tbody>
     </table>
+    </div>
 </div>
 <?php require __DIR__ . '/../includes/footer.php'; ?>

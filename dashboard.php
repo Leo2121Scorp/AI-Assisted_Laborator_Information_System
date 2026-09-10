@@ -162,6 +162,7 @@ require __DIR__ . '/includes/header.php';
             <a class="btn btn-secondary" href="<?= e(base_url('specimens/index.php')) ?>">View specimen board</a>
         </div>
     <?php else: ?>
+        <div class="table-scroll">
         <table>
             <thead>
             <tr><th>Specimen</th><th>Request</th><th>Patient</th><th>Status</th><th>Last update</th><th></th></tr>
@@ -179,6 +180,7 @@ require __DIR__ . '/includes/header.php';
             <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
     <?php endif; ?>
 </div>
 <?php require __DIR__ . '/includes/footer.php'; ?>

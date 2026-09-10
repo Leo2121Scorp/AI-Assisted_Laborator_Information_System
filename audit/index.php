@@ -19,6 +19,7 @@ require __DIR__ . '/../includes/header.php';
     <p>Immutable activity trail for authentication, specimen updates, encoding, approval, release, and backups.</p>
 </div>
 <div class="card">
+    <div class="table-scroll">
     <table>
         <thead>
         <tr><th>When</th><th>User</th><th>Action</th><th>Entity</th><th>Details</th><th>IP</th></tr>
@@ -40,5 +41,6 @@ require __DIR__ . '/../includes/header.php';
         <?php endif; ?>
         </tbody>
     </table>
+    </div>
 </div>
 <?php require __DIR__ . '/../includes/footer.php'; ?>

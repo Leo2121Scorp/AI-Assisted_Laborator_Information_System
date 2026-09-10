@@ -49,6 +49,7 @@ require __DIR__ . '/../includes/header.php';
     </form>
 </div>
 <div class="card">
+    <div class="table-scroll">
     <table>
         <thead><tr><th>ID</th><th>Username</th><th>Name</th><th>Role</th><th>Active</th><th>Created</th><th>Actions</th></tr></thead>
         <tbody>
@@ -70,5 +71,6 @@ require __DIR__ . '/../includes/header.php';
         <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
 </div>
 <?php require __DIR__ . '/../includes/footer.php'; ?>

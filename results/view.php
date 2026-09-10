@@ -123,6 +123,7 @@ require __DIR__ . '/../includes/header.php';
     <h2><?= $editable ? 'Encode results' : 'Encoded values' ?></h2>
     <form method="post">
         <input type="hidden" name="action" value="encode">
+        <div class="table-scroll">
         <table>
             <thead><tr><th>Test</th><th>Unit</th><th>Value</th><th>Flags</th></tr></thead>
             <tbody>
@@ -148,6 +149,7 @@ require __DIR__ . '/../includes/header.php';
             <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
         <?php if ($editable): ?>
             <div class="actions">
                 <button class="btn" type="submit">Save, validate &amp; run AI</button>
@@ -160,25 +162,25 @@ require __DIR__ . '/../includes/header.php';
     <h2>Medical technologist review</h2>
     <div class="actions">
         <?php if ($result['status'] === 'validated' && can('approve_results')): ?>
-            <form method="post" style="display:inline">
+            <form method="post">
                 <input type="hidden" name="action" value="approve">
                 <button class="btn" type="submit" data-confirm="Approve this result?">Approve result</button>
             </form>
-            <form method="post" style="display:inline;display:flex;gap:0.5rem;align-items:end">
+            <form method="post" class="reject-form">
                 <input type="hidden" name="action" value="reject">
                 <input name="rejection_reason" placeholder="Rejection reason" required>
                 <button class="btn btn-danger" type="submit">Reject / re-encode</button>
             </form>
         <?php endif; ?>
         <?php if ($result['status'] === 'approved' && can('release_reports')): ?>
-            <form method="post" style="display:inline">
+            <form method="post">
                 <input type="hidden" name="action" value="report">
                 <button class="btn btn-amber" type="submit">Generate report</button>
             </form>
         <?php endif; ?>
         <?php if ($result['status'] === 'reported' && can('release_reports')): ?>
             <a class="btn btn-secondary" href="<?= e(base_url('reports/view.php?id=' . $id)) ?>">View report</a>
-            <form method="post" style="display:inline">
+            <form method="post">
                 <input type="hidden" name="action" value="release">
                 <button class="btn" type="submit" data-confirm="Release this result to the patient/clinic?">Release result</button>
             </form>

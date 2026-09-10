@@ -44,6 +44,7 @@ require __DIR__ . '/../includes/header.php';
     <h1>Laboratory Report</h1>
     <p><strong><?= e(app_config('lab_name')) ?></strong></p>
     <hr>
+    <div class="report-meta">
     <p>
         <strong>Patient:</strong> <?= e($result['last_name'] . ', ' . $result['first_name'] . ' ' . ($result['middle_name'] ?? '')) ?><br>
         <strong>Patient ID:</strong> <?= e($result['patient_code']) ?> |
@@ -54,6 +55,8 @@ require __DIR__ . '/../includes/header.php';
         <strong>Panel:</strong> <?= e($result['panel_code']) ?><br>
         <strong>Physician:</strong> <?= e($result['requesting_physician'] ?: '—') ?>
     </p>
+    </div>
+    <div class="table-scroll">
     <table>
         <thead><tr><th>Test</th><th>Result</th><th>Unit</th><th>Flag</th></tr></thead>
         <tbody>
@@ -69,6 +72,7 @@ require __DIR__ . '/../includes/header.php';
         <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
     <p style="margin-top:1rem">
         Status: <strong><?= e($result['status']) ?></strong><br>
         Approved by: <?= e($result['approved_by_name'] ?: '—') ?> at <?= e($result['approved_at'] ?: '—') ?><br>

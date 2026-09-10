@@ -83,6 +83,7 @@ $filters = [
             <a class="btn" href="<?= e(base_url('requests/create.php')) ?>">New request</a>
         </div>
     <?php else: ?>
+        <div class="table-scroll">
         <table>
             <thead>
             <tr><th>Request</th><th>Patient</th><th>Physician</th><th>Status</th><th>Created</th><th></th></tr>
@@ -100,6 +101,7 @@ $filters = [
             <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
     <?php endif; ?>
 </div>
 <?php require __DIR__ . '/../includes/footer.php'; ?>

@@ -54,6 +54,7 @@ require __DIR__ . '/../includes/header.php';
 </div>
 <div class="card">
     <h2>Specimens</h2>
+    <div class="table-scroll">
     <table>
         <thead><tr><th>Code</th><th>Type</th><th>Status</th><th></th></tr></thead>
         <tbody>
@@ -67,9 +68,11 @@ require __DIR__ . '/../includes/header.php';
         <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
 </div>
 <div class="card">
     <h2>Results</h2>
+    <div class="table-scroll">
     <table>
         <thead><tr><th>Code</th><th>Panel</th><th>Status</th><th>AI</th><th></th></tr></thead>
         <tbody>
@@ -84,5 +87,6 @@ require __DIR__ . '/../includes/header.php';
         <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
 </div>
 <?php require __DIR__ . '/../includes/footer.php'; ?>

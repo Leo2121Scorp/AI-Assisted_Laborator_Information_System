@@ -25,7 +25,7 @@ $pageTitle = 'Login — AI-LIS';
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title><?= e($pageTitle) ?></title>
     <link rel="icon" type="image/png" href="<?= e(base_url('assets/img/clinic-logo.png')) ?>">
     <link rel="stylesheet" href="<?= e(base_url('assets/css/style.css')) ?>">
@@ -48,10 +48,10 @@ $pageTitle = 'Login — AI-LIS';
             </div>
             <button class="btn" type="submit">Log In</button>
         </form>
-        <p class="sub" style="margin-top:1rem;font-size:0.85rem">
+        <p class="login-demo">
             Demo logins (password <code>password123</code>):<br>
-            <strong>staff</strong> — front desk ·
-            <strong>medtech</strong> — lab bench ·
+            <strong>staff</strong> — front desk<br>
+            <strong>medtech</strong> — lab bench<br>
             <strong>manager</strong> — oversight
         </p>
     </div>

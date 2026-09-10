@@ -11,22 +11,27 @@ $navKey = current_nav_key();
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title><?= e($pageTitle) ?></title>
     <link rel="icon" type="image/png" href="<?= e(base_url('assets/img/clinic-logo.png')) ?>">
     <link rel="stylesheet" href="<?= e(base_url('assets/css/style.css')) ?>">
 </head>
 <body>
 <?php if ($user): ?>
-<header class="topbar">
-    <a class="brand" href="<?= e(base_url('dashboard.php')) ?>">
-        <img class="brand-logo" src="<?= e(base_url('assets/img/clinic-logo.png')) ?>" alt="Lagman Qualicare logo" width="42" height="42">
-        <span class="brand-text">
-            <strong>AI-LIS</strong>
-            <span><?= e(app_config('lab_name')) ?></span>
-        </span>
-    </a>
-    <nav class="nav" aria-label="Main">
+<header class="topbar" id="topbar">
+    <div class="topbar-bar">
+        <a class="brand" href="<?= e(base_url('dashboard.php')) ?>">
+            <img class="brand-logo" src="<?= e(base_url('assets/img/clinic-logo.png')) ?>" alt="Lagman Qualicare logo" width="42" height="42">
+            <span class="brand-text">
+                <strong>AI-LIS</strong>
+                <span><?= e(app_config('lab_name')) ?></span>
+            </span>
+        </a>
+        <button type="button" class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="Open menu">
+            <span class="nav-toggle-bars" aria-hidden="true"></span>
+        </button>
+    </div>
+    <nav class="nav" id="main-nav" aria-label="Main">
         <a href="<?= e(base_url('dashboard.php')) ?>"<?= nav_link_class('dashboard', $navKey) ?>>Dashboard</a>
         <?php if (can('patients')): ?><a href="<?= e(base_url('patients/index.php')) ?>"<?= nav_link_class('patients', $navKey) ?>>Patients</a><?php endif; ?>
         <?php if (can('requests')): ?><a href="<?= e(base_url('requests/index.php')) ?>"<?= nav_link_class('requests', $navKey) ?>>Requests</a><?php endif; ?>

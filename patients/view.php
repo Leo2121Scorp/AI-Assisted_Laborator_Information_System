@@ -44,6 +44,7 @@ require __DIR__ . '/../includes/header.php';
 </div>
 <div class="card">
     <h2>Laboratory requests</h2>
+    <div class="table-scroll">
     <table>
         <thead><tr><th>Code</th><th>Status</th><th>Created</th><th></th></tr></thead>
         <tbody>
@@ -58,5 +59,6 @@ require __DIR__ . '/../includes/header.php';
         <?php if (!$requests): ?><tr><td colspan="4">No requests yet.</td></tr><?php endif; ?>
         </tbody>
     </table>
+    </div>
 </div>
 <?php require __DIR__ . '/../includes/footer.php'; ?>

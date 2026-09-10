@@ -42,6 +42,7 @@ require __DIR__ . '/../includes/header.php';
             <a class="btn" href="<?= e(base_url('patients/create.php')) ?>">Register patient</a>
         </div>
     <?php else: ?>
+        <div class="table-scroll">
         <table>
             <thead>
             <tr><th>Code</th><th>Name</th><th>Sex</th><th>Age</th><th>Contact</th><th>Actions</th></tr>
@@ -69,6 +70,7 @@ require __DIR__ . '/../includes/header.php';
             <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
     <?php endif; ?>
 </div>
 <?php require __DIR__ . '/../includes/footer.php'; ?>

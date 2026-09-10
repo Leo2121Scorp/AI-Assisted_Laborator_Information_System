@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   initRoleGuide();
   initAiChat();
+  initMobileNav();
+  enhanceResponsiveTables();
 });
 
 function initRoleGuide() {
@@ -151,6 +153,7 @@ function initAiChat() {
     }
     toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     root.classList.toggle('is-open', open);
+    document.body.classList.toggle('ai-chat-open', open);
     if (open && input) input.focus();
   }
 
@@ -243,4 +246,56 @@ function initAiChat() {
   if (dashOpen) {
     dashOpen.addEventListener('click', function () { setOpen(true); });
   }
+}
+
+function initMobileNav() {
+  var bar = document.getElementById('topbar');
+  var toggle = document.getElementById('nav-toggle');
+  if (!bar || !toggle) return;
+
+  function setOpen(open) {
+    bar.classList.toggle('is-open', open);
+    document.body.classList.toggle('nav-open', open);
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  }
+
+  toggle.addEventListener('click', function () {
+    setOpen(!bar.classList.contains('is-open'));
+  });
+
+  bar.querySelectorAll('.nav a').forEach(function (link) {
+    link.addEventListener('click', function () { setOpen(false); });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && bar.classList.contains('is-open')) {
+      setOpen(false);
+    }
+  });
+
+  window.addEventListener('resize', function () {
+    if (window.innerWidth > 960) setOpen(false);
+  });
+}
+
+function enhanceResponsiveTables() {
+  document.querySelectorAll('main table').forEach(function (table) {
+    if (!table.closest('.table-scroll')) {
+      var wrap = document.createElement('div');
+      wrap.className = 'table-scroll';
+      table.parentNode.insertBefore(wrap, table);
+      wrap.appendChild(table);
+    }
+    var headers = Array.prototype.map.call(table.querySelectorAll('thead th'), function (th) {
+      return (th.textContent || '').trim();
+    });
+    table.querySelectorAll('tbody tr').forEach(function (tr) {
+      Array.prototype.forEach.call(tr.children, function (td, i) {
+        if (!td.hasAttribute('data-label')) {
+          td.setAttribute('data-label', headers[i] || '');
+        }
+      });
+    });
+  });
 }

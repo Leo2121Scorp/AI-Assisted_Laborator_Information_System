@@ -84,6 +84,7 @@ $filters = [
             <?php endif; ?>
         </div>
     <?php else: ?>
+        <div class="table-scroll">
         <table>
             <thead>
             <tr><th>Result</th><th>Request</th><th>Patient</th><th>Panel</th><th>Status</th><th></th></tr>
@@ -105,6 +106,7 @@ $filters = [
             <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
     <?php endif; ?>
 </div>
 <?php require __DIR__ . '/../includes/footer.php'; ?>
