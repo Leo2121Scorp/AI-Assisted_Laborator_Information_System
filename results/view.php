@@ -107,7 +107,7 @@ require __DIR__ . '/../includes/header.php';
 </div>
 <?php endif; ?>
 
-<?php if ($aiFlag && ($aiFlag['is_anomaly'] || $result['ai_flagged'])): ?>
+<?php if ($aiFlag && ((int) $aiFlag['is_anomaly'] === 1 || (int) $result['ai_flagged'] === 1)): ?>
 <div class="warning-box">
     <strong>AI Warning (Isolation Forest)</strong>
     <p><?= e($aiFlag['warning_message'] ?: 'Anomaly flagged.') ?></p>

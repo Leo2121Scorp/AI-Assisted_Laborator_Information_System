@@ -214,11 +214,34 @@ def explain_anomaly(features: dict, sex: str, age: Any, score: float) -> str | N
 load_model()
 
 
+def _json_safe(value: Any) -> Any:
+    if isinstance(value, (np.floating, float)):
+        number = float(value)
+        if not np.isfinite(number):
+            return None
+        return number
+    if isinstance(value, (np.integer, int)):
+        return int(value)
+    if isinstance(value, np.bool_):
+        return bool(value)
+    return value
+
+
+@app.errorhandler(Exception)
+def on_error(exc: Exception):
+    app.logger.exception("AI service error")
+    return jsonify({"ok": False, "error": "internal", "detail": str(exc)}), 500
+
+
 @app.get("/health")
 def health():
+    if model is None:
+        load_model()
     providers = [p["name"] for p in llm_providers()]
+    loaded = model is not None
     return jsonify({
-        "ok": model is not None,
+        "ok": loaded,
+        "model_loaded": loaded,
         "model_version": meta.get("model_version"),
         "openrouter": openrouter_ready(),
         "chat_providers": providers,
@@ -308,7 +331,7 @@ def predict():
 
     X = np.array([vector], dtype=float)
     pred = int(model.predict(X)[0])  # -1 anomaly, 1 normal
-    score = float(model.decision_function(X)[0])
+    score = _json_safe(model.decision_function(X)[0])
     is_anomaly = pred == -1
 
     warning = None

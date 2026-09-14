@@ -143,15 +143,27 @@ function encode_and_validate_result(int $resultId, array $inputs): array
             $resultId,
         ]);
 
-        // AI prediction
-        $aiPayload = [
-            'result_id' => $resultId,
-            'patient_sex' => $result['sex'],
-            'patient_age' => patient_age($result['birth_date']),
-            'test_code' => $result['panel_code'],
-            'features' => $features,
-        ];
-        $ai = ai_predict($aiPayload);
+        // Isolation Forest is trained on CBC only. Other panels skip the remote call
+        // so a down/HTML AI service cannot be shown as a false "AI warning".
+        $panel = strtoupper((string) $result['panel_code']);
+        if ($panel !== 'CBC') {
+            $ai = [
+                'ok' => true,
+                'is_anomaly' => false,
+                'score' => null,
+                'warning_message' => null,
+                'model_version' => null,
+                'raw' => ['note' => 'Panel outside CBC Isolation Forest scope; rule-based validation applies.'],
+            ];
+        } else {
+            $ai = ai_predict([
+                'result_id' => $resultId,
+                'patient_sex' => $result['sex'],
+                'patient_age' => patient_age($result['birth_date']),
+                'test_code' => $result['panel_code'],
+                'features' => $features,
+            ]);
+        }
 
         $pdo->prepare('DELETE FROM ai_flags WHERE lab_result_id = ?')->execute([$resultId]);
         $rawJson = $ai['raw'] ? json_encode($ai['raw']) : json_encode($ai);
@@ -181,7 +193,7 @@ function encode_and_validate_result(int $resultId, array $inputs): array
             ]);
         }
 
-        $aiFlagged = !empty($ai['is_anomaly']) || !$ai['ok'] ? 1 : 0;
+        $aiFlagged = !empty($ai['ok']) && !empty($ai['is_anomaly']) ? 1 : 0;
         $pdo->prepare(
             'UPDATE lab_results SET status = ?, ai_flagged = ? WHERE id = ?'
         )->execute(['validated', $aiFlagged, $resultId]);
@@ -196,7 +208,7 @@ function encode_and_validate_result(int $resultId, array $inputs): array
         audit_log('encode_validate', 'lab_result', $resultId, 'Encoded and validated; AI flagged=' . $aiFlagged);
 
         $messages = $validation['warnings'];
-        if (!empty($ai['warning_message'])) {
+        if ($aiFlagged && !empty($ai['warning_message'])) {
             $messages[] = $ai['warning_message'];
         }
         return [
