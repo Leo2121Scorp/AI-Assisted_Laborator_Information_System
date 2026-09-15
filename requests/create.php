@@ -61,10 +61,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // One result record per panel
             foreach (array_keys($panelCodes) as $panel) {
                 $resCode = generate_code('RS');
-                $pdo->prepare(
+                db_insert(
                     'INSERT INTO lab_results (result_code, lab_request_id, specimen_id, panel_code, status)
-                     VALUES (?, ?, ?, ?, \'pending\')'
-                )->execute([$resCode, $requestId, $specimenId, $panel]);
+                     VALUES (?, ?, ?, ?, \'pending\')',
+                    [$resCode, $requestId, $specimenId, $panel],
+                    $pdo
+                );
             }
 
             $pdo->commit();

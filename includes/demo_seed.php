@@ -10,12 +10,12 @@ declare(strict_types=1);
 function seed_demo_lab_cases(PDO $pdo): array
 {
     try {
-        $existing = (int) $pdo->query('SELECT COUNT(*) FROM lab_results')->fetchColumn();
+        $pending = (int) $pdo->query("SELECT COUNT(*) FROM lab_results WHERE status = 'pending'")->fetchColumn();
     } catch (Throwable $e) {
         return ['ok' => false, 'created' => 0, 'message' => 'lab_results table is missing. Run install first.'];
     }
-    if ($existing > 0) {
-        return ['ok' => true, 'created' => 0, 'message' => 'Results already exist — demo seed skipped.'];
+    if ($pending > 0) {
+        return ['ok' => true, 'created' => 0, 'message' => 'Pending results already exist — demo seed skipped.'];
     }
 
     $userId = (int) $pdo->query(
@@ -95,6 +95,12 @@ function seed_demo_lab_cases(PDO $pdo): array
         ],
     ];
 
+    $alreadyHasResults = (int) $pdo->query('SELECT COUNT(*) FROM lab_results')->fetchColumn() > 0;
+    if ($alreadyHasResults) {
+        $cases = array_values(array_filter($cases, static fn(array $c): bool => $c['status'] === 'pending'));
+    }
+    $sfx = strtoupper(bin2hex(random_bytes(2)));
+
     $created = 0;
     $pdo->beginTransaction();
     try {
@@ -112,13 +118,14 @@ function seed_demo_lab_cases(PDO $pdo): array
             }
 
             $p = $case['patient'];
+            $p[0] = sprintf('DEM-PT-%s-%03d', $sfx, $i + 1);
             $patientId = $insert(
                 'INSERT INTO patients (patient_code, first_name, last_name, sex, birth_date, contact_number, address, created_by)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
                 [$p[0], $p[1], $p[2], $p[3], $p[4], $p[5], $p[6], $userId]
             );
 
-            $reqCode = sprintf('DEM-RQ-%03d', $i + 1);
+            $reqCode = sprintf('DEM-RQ-%s-%03d', $sfx, $i + 1);
             $requestStatus = $case['status'] === 'released' ? 'completed' : 'in_progress';
             $requestId = $insert(
                 'INSERT INTO lab_requests (request_code, patient_id, requesting_physician, clinical_notes, status, created_by)
@@ -130,7 +137,7 @@ function seed_demo_lab_cases(PDO $pdo): array
                 $insRt->execute([$requestId, $tid]);
             }
 
-            $specCode = sprintf('DEM-SP-%03d', $i + 1);
+            $specCode = sprintf('DEM-SP-%s-%03d', $sfx, $i + 1);
             $collected = $case['specimen'] !== 'pending' ? date('Y-m-d H:i:s') : null;
             $specimenId = $insert(
                 'INSERT INTO specimens (specimen_code, lab_request_id, specimen_type, status, collected_at, updated_by)
@@ -138,7 +145,7 @@ function seed_demo_lab_cases(PDO $pdo): array
                 [$specCode, $requestId, 'Blood', $case['specimen'], $collected, $userId]
             );
 
-            $resCode = sprintf('DEM-RS-%03d', $i + 1);
+            $resCode = sprintf('DEM-RS-%s-%03d', $sfx, $i + 1);
             $encodedAt = $case['values'] ? date('Y-m-d H:i:s') : null;
             $approvedAt = in_array($case['status'], ['approved', 'reported', 'released'], true) ? date('Y-m-d H:i:s') : null;
             $releasedAt = $case['status'] === 'released' ? date('Y-m-d H:i:s') : null;

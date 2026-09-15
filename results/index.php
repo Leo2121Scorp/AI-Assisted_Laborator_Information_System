@@ -140,6 +140,14 @@ $pipeline = [
                 <p>No warning rows in this filter. <?= (int) $counts['all'] ?> result(s) are already saved — your released CBC is under <strong>All</strong> or <strong>Released</strong>.</p>
                 <a class="btn" href="<?= e(base_url('results/index.php')) ?>">View all results</a>
                 <a class="btn btn-secondary" href="<?= e(base_url('results/index.php?status=released')) ?>">Released</a>
+            <?php elseif ($status === 'pending'): ?>
+                <p>Pending encode is empty because every saved result is already past encoding. <?= (int) ($counts['all'] ?? 0) ?> result(s) in the database<?= !empty($counts['released']) ? ', ' . (int) $counts['released'] . ' released' : '' ?>. Load a pending demo row or create a new request.</p>
+                <form method="post" style="display:inline">
+                    <input type="hidden" name="action" value="seed_demo">
+                    <button class="btn" type="submit">Load pending demo result</button>
+                </form>
+                <a class="btn btn-secondary" href="<?= e(base_url('results/index.php')) ?>">View all results</a>
+                <a class="btn btn-secondary" href="<?= e(base_url('requests/create.php')) ?>">New request</a>
             <?php elseif ($status !== '' || $q !== ''): ?>
                 <p>No results match these filters.</p>
                 <a class="btn" href="<?= e(base_url('results/index.php')) ?>">View all results</a>
