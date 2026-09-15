@@ -12,7 +12,7 @@ $stats = [
     'open_requests' => (int) $pdo->query("SELECT COUNT(*) FROM lab_requests WHERE status IN ('open','in_progress')")->fetchColumn(),
     'active_specimens' => (int) $pdo->query("SELECT COUNT(*) FROM specimens WHERE status NOT IN ('completed')")->fetchColumn(),
     'pending_review' => (int) $pdo->query("SELECT COUNT(*) FROM lab_results WHERE status = 'validated'")->fetchColumn(),
-    'ai_flags' => (int) $pdo->query('SELECT COUNT(*) FROM lab_results WHERE ai_flagged = 1 AND status IN (\'validated\',\'approved\')')->fetchColumn(),
+    'ai_flags' => (int) $pdo->query('SELECT COUNT(*) FROM lab_results r WHERE ' . sql_result_has_warning())->fetchColumn(),
     'pending_collect' => (int) $pdo->query("SELECT COUNT(*) FROM specimens WHERE status = 'pending'")->fetchColumn(),
     'released_reports' => (int) $pdo->query("SELECT COUNT(*) FROM lab_results WHERE status IN ('reported','released')")->fetchColumn(),
 ];
@@ -49,7 +49,7 @@ $quickActions = match ($role) {
         ['label' => 'Review results', 'href' => 'results/index.php?status=validated', 'primary' => false],
         ['label' => 'Encode pending', 'href' => 'results/index.php?status=pending', 'primary' => false],
         ['label' => 'Process specimens', 'href' => 'specimens/index.php?status=collected', 'primary' => false],
-        ['label' => 'AI warnings', 'href' => 'results/index.php?ai=1', 'primary' => false],
+        ['label' => 'Warnings', 'href' => 'results/index.php?ai=1', 'primary' => false],
     ],
     ROLE_MANAGER => [
         ['label' => 'Results', 'href' => 'results/index.php', 'primary' => true],
@@ -136,7 +136,7 @@ require __DIR__ . '/includes/header.php';
         </a>
         <a class="stat stat-link" href="<?= e(base_url('results/index.php?ai=1')) ?>">
             <div class="num"><?= $stats['ai_flags'] ?></div>
-            <div class="label">AI warnings open</div>
+            <div class="label">Warnings (rules + AI)</div>
             <span class="stat-go">Review →</span>
         </a>
     <?php else: ?>

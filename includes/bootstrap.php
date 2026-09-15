@@ -143,10 +143,29 @@ function result_status_counts(): array
             }
         }
     } catch (Throwable $e) {
-        return $out + ['all' => 0];
+        return $out + ['all' => 0, 'warnings' => 0];
     }
     $out['all'] = array_sum($out);
+    try {
+        $out['warnings'] = (int) db()->query(
+            'SELECT COUNT(*) FROM lab_results r WHERE ' . sql_result_has_warning()
+        )->fetchColumn();
+    } catch (Throwable $e) {
+        $out['warnings'] = 0;
+    }
     return $out;
+}
+
+/** Rule-based OOR/critical, rule_warnings text, or Isolation Forest flag — any status. */
+function sql_result_has_warning(string $alias = 'r'): string
+{
+    return "({$alias}.ai_flagged = 1
+        OR ({$alias}.rule_warnings IS NOT NULL AND {$alias}.rule_warnings <> '')
+        OR EXISTS (
+            SELECT 1 FROM result_values rv
+            WHERE rv.lab_result_id = {$alias}.id
+              AND (rv.is_out_of_range = 1 OR rv.is_critical = 1)
+        ))";
 }
 
 /**

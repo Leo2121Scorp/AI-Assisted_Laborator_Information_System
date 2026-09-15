@@ -26,7 +26,7 @@ if ($status !== '' && in_array($status, $allowedStatus, true)) {
     $params[] = $status;
 }
 if ($aiOnly) {
-    $sql .= ' AND r.ai_flagged = 1 AND r.status IN (\'validated\',\'approved\')';
+    $sql .= ' AND ' . sql_result_has_warning();
 }
 if ($q !== '') {
     $sql .= ' AND (r.result_code LIKE ? OR lr.request_code LIKE ? OR p.first_name LIKE ? OR p.last_name LIKE ? OR r.panel_code LIKE ?)';
@@ -88,6 +88,15 @@ $pipeline = [
                 <?= e($label) ?> <strong><?= (int) ($counts[$value] ?? 0) ?></strong>
             </a>
         <?php endforeach; ?>
+        <?php
+        $warnHref = 'results/index.php?ai=1';
+        if ($q !== '') {
+            $warnHref .= '&q=' . rawurlencode($q);
+        }
+        ?>
+        <a class="result-pipe<?= $aiOnly ? ' is-active' : '' ?>" href="<?= e(base_url($warnHref)) ?>">
+            Warnings <strong><?= (int) ($counts['warnings'] ?? 0) ?></strong>
+        </a>
     </div>
     <form method="get" class="toolbar-form" role="search">
         <input name="q" value="<?= e($q) ?>" placeholder="Search result, request, patient, panel…">
@@ -121,15 +130,16 @@ $pipeline = [
             $aiHref .= '&q=' . rawurlencode($q);
         }
         ?>
-        <a class="chip<?= $aiOnly ? ' is-active' : '' ?>" href="<?= e(base_url($aiHref)) ?>">AI warnings</a>
+        <a class="chip<?= $aiOnly ? ' is-active' : '' ?>" href="<?= e(base_url($aiHref)) ?>">Warnings</a>
     </div>
 </div>
 <div class="card">
     <?php if (!$rows): ?>
         <div class="empty-state">
             <?php if ($aiOnly && ($counts['all'] ?? 0) > 0): ?>
-                <p>No AI warnings in the queue. Other results are already in the database.</p>
+                <p>No warning rows in this filter. <?= (int) $counts['all'] ?> result(s) are already saved — your released CBC is under <strong>All</strong> or <strong>Released</strong>.</p>
                 <a class="btn" href="<?= e(base_url('results/index.php')) ?>">View all results</a>
+                <a class="btn btn-secondary" href="<?= e(base_url('results/index.php?status=released')) ?>">Released</a>
             <?php elseif ($status !== '' || $q !== ''): ?>
                 <p>No results match these filters.</p>
                 <a class="btn" href="<?= e(base_url('results/index.php')) ?>">View all results</a>
@@ -146,7 +156,7 @@ $pipeline = [
         <div class="table-scroll">
         <table>
             <thead>
-            <tr><th>Result</th><th>Request</th><th>Patient</th><th>Panel</th><th>Status</th><th>AI</th><th></th></tr>
+            <tr><th>Result</th><th>Request</th><th>Patient</th><th>Panel</th><th>Status</th><th>Flags</th><th></th></tr>
             </thead>
             <tbody>
             <?php foreach ($rows as $r): ?>
@@ -156,7 +166,11 @@ $pipeline = [
                     <td><?= e($r['patient_name']) ?></td>
                     <td><?= e($r['panel_code']) ?></td>
                     <td><span class="badge<?= $r['status'] === 'validated' ? ' badge-warning' : ($r['status'] === 'released' ? ' badge-ok' : '') ?>"><?= e($r['status']) ?></span></td>
-                    <td><?= $r['ai_flagged'] ? '<span class="badge badge-warning">warning</span>' : '—' ?></td>
+                    <td>
+                        <?php if (!empty($r['ai_flagged'])): ?><span class="badge badge-warning">AI</span><?php endif; ?>
+                        <?php if (!empty($r['rule_warnings'])): ?><span class="badge badge-warning">rules</span><?php endif; ?>
+                        <?php if (empty($r['ai_flagged']) && empty($r['rule_warnings'])): ?>—<?php endif; ?>
+                    </td>
                     <td><a class="btn btn-small btn-secondary" href="<?= e(base_url('results/view.php?id=' . $r['id'])) ?>">Open</a></td>
                 </tr>
             <?php endforeach; ?>
