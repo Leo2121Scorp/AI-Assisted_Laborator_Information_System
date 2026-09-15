@@ -66,7 +66,9 @@ try {
     }
 
     if (!$needsInstall) {
-        fwrite(STDOUT, "auto_install: already initialized\n");
+        require_once __DIR__ . '/../includes/demo_seed.php';
+        $demo = seed_demo_lab_cases($pdo);
+        fwrite(STDOUT, 'auto_install: already initialized; ' . $demo['message'] . "\n");
         exit(0);
     }
 
@@ -85,7 +87,9 @@ try {
         mkdir($backupDir, 0775, true);
     }
 
-    fwrite(STDOUT, "auto_install: schema + demo users ready\n");
+    require_once __DIR__ . '/../includes/demo_seed.php';
+    $demo = seed_demo_lab_cases($pdo);
+    fwrite(STDOUT, "auto_install: schema + demo users ready; " . $demo['message'] . "\n");
     exit(0);
 } catch (Throwable $e) {
     fwrite(STDERR, 'auto_install failed: ' . $e->getMessage() . "\n");

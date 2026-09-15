@@ -28,6 +28,7 @@ AI-Assisted Laboratory Information System — Lagman Qualicare Multispecialty an
 | View released reports | Y | Y | Y |
 | View audit logs | Y | Y | — |
 | Run database backup | Y | — | — |
+| View / control database (Render Postgres inventory) | Y | — | — |
 | View AI warnings | Y | Y | — |
 
 ---

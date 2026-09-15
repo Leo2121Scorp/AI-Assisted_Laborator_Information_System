@@ -1,6 +1,12 @@
-# Render Blueprint — free web + AI
-# Free tier allows only ONE Postgres. Use your existing free DB's
-# Internal Database URL as DATABASE_URL on ailab-web (set in Dashboard).
+# Render Blueprint — web + AI + Postgres
+# Free workspaces allow only ONE Postgres. If create fails, reuse your existing
+# instance and paste its Internal Database URL into ailab-web → Environment.
+
+databases:
+  - name: ailab-db
+    databaseName: ailab_lis
+    user: ailab
+    plan: free
 
 services:
   - type: web
@@ -32,7 +38,9 @@ services:
     healthCheckPath: /login.php
     envVars:
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: ailab-db
+          property: connectionString
       - key: OPENROUTER_API_KEY
         sync: false
       - key: OPENROUTER_MODEL
@@ -43,8 +51,7 @@ services:
         value: https://router.bynara.id/v1
       - key: BACKUP_AI_MODEL
         value: auto/bynara
-      - key: AI_SERVICE_URL
-        fromService:
-          name: ailab-ai
-          type: web
-          property: host
+      # Isolation Forest runs inside ailab-web (127.0.0.1:5001). Do not point at
+      # the sibling free service — it sleeps independently and looks "offline".
+      - key: START_EMBEDDED_AI
+        value: "1"

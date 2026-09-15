@@ -79,6 +79,9 @@ function current_nav_key(): string
     if (str_contains($script, '/admin/ranges')) {
         return 'ranges';
     }
+    if (str_contains($script, '/admin/database')) {
+        return 'database';
+    }
     if (str_contains($script, '/admin/users') || str_contains($script, '/admin/user_')) {
         return 'users';
     }
@@ -128,6 +131,7 @@ function can(string $permission): bool
         'view_reports' => [ROLE_MANAGER, ROLE_MED_TECH, ROLE_STAFF],
         'view_audit' => [ROLE_MANAGER, ROLE_MED_TECH],
         'backup' => [ROLE_MANAGER],
+        'view_database' => [ROLE_MANAGER],
         'view_ai' => [ROLE_MANAGER, ROLE_MED_TECH],
         'use_ai_chat' => [ROLE_MANAGER, ROLE_MED_TECH],
     ];

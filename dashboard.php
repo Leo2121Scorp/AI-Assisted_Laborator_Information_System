@@ -45,15 +45,17 @@ $quickActions = match ($role) {
         ['label' => 'Find reports', 'href' => 'reports/index.php', 'primary' => false],
     ],
     ROLE_MED_TECH => [
-        ['label' => 'Review results', 'href' => 'results/index.php?status=validated', 'primary' => true],
+        ['label' => 'Results', 'href' => 'results/index.php', 'primary' => true],
+        ['label' => 'Review results', 'href' => 'results/index.php?status=validated', 'primary' => false],
         ['label' => 'Encode pending', 'href' => 'results/index.php?status=pending', 'primary' => false],
         ['label' => 'Process specimens', 'href' => 'specimens/index.php?status=collected', 'primary' => false],
         ['label' => 'AI warnings', 'href' => 'results/index.php?ai=1', 'primary' => false],
     ],
     ROLE_MANAGER => [
-        ['label' => 'Awaiting review', 'href' => 'results/index.php?status=validated', 'primary' => true],
+        ['label' => 'Results', 'href' => 'results/index.php', 'primary' => true],
+        ['label' => 'Awaiting review', 'href' => 'results/index.php?status=validated', 'primary' => false],
         ['label' => 'Manage users', 'href' => 'admin/users.php', 'primary' => false],
-        ['label' => 'Reference ranges', 'href' => 'admin/ranges.php', 'primary' => false],
+        ['label' => 'Database', 'href' => 'admin/database.php', 'primary' => false],
         ['label' => 'Run backup', 'href' => 'backup/index.php', 'primary' => false],
     ],
     default => [
@@ -64,7 +66,7 @@ $quickActions = match ($role) {
 $workflowHint = match ($role) {
     ROLE_STAFF => 'Your flow: Patient → Request → Collect specimen → Look up report.',
     ROLE_MED_TECH => 'Your flow: Process specimen → Encode → Review AI → Approve → Release.',
-    ROLE_MANAGER => 'Your focus: delays, pending review, AI flags, users, ranges, and backups.',
+    ROLE_MANAGER => 'Your focus: results, delays, pending review, users, the Render database, and backups.',
     default => 'Use the Guide button anytime for a step-by-step walkthrough.',
 };
 

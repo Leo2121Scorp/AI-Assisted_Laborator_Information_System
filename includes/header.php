@@ -40,6 +40,7 @@ $navKey = current_nav_key();
             <?php if (can('encode_results')): ?><a href="<?= e(base_url('results/index.php')) ?>"<?= nav_link_class('results', $navKey) ?>>Results</a><?php endif; ?>
             <?php if (can('view_reports')): ?><a href="<?= e(base_url('reports/index.php')) ?>"<?= nav_link_class('reports', $navKey) ?>>Reports</a><?php endif; ?>
             <?php if (can('view_audit')): ?><a href="<?= e(base_url('audit/index.php')) ?>"<?= nav_link_class('audit', $navKey) ?>>Audit</a><?php endif; ?>
+            <?php if (can('view_database')): ?><a href="<?= e(base_url('admin/database.php')) ?>"<?= nav_link_class('database', $navKey) ?>>Database</a><?php endif; ?>
             <?php if (can('backup')): ?><a href="<?= e(base_url('backup/index.php')) ?>"<?= nav_link_class('backup', $navKey) ?>>Backup</a><?php endif; ?>
             <?php if (can('manage_ranges')): ?><a href="<?= e(base_url('admin/ranges.php')) ?>"<?= nav_link_class('ranges', $navKey) ?>>Ranges</a><?php endif; ?>
             <?php if (can('manage_users')): ?><a href="<?= e(base_url('admin/users.php')) ?>"<?= nav_link_class('users', $navKey) ?>>Users</a><?php endif; ?>

@@ -3,6 +3,12 @@ declare(strict_types=1);
 require_once __DIR__ . '/../includes/bootstrap.php';
 require_permission('encode_results');
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'seed_demo') {
+    $out = seed_demo_lab_cases(db());
+    flash($out['ok'] ? 'success' : 'error', $out['message']);
+    redirect('results/index.php');
+}
+
 $q = trim($_GET['q'] ?? '');
 $status = trim($_GET['status'] ?? '');
 $aiOnly = isset($_GET['ai']) && $_GET['ai'] === '1';
@@ -34,14 +40,25 @@ $stmt = db()->prepare($sql);
 $stmt->execute($params);
 $rows = $stmt->fetchAll();
 
+$counts = result_status_counts();
 $pageTitle = 'Results — AI-LIS';
 require __DIR__ . '/../includes/header.php';
 
 $filters = [
     '' => 'All',
     'pending' => 'Pending encode',
+    'encoded' => 'Encoded',
     'validated' => 'Awaiting review',
     'approved' => 'Approved',
+    'reported' => 'Reported',
+    'released' => 'Released',
+];
+$pipeline = [
+    'pending' => 'Pending',
+    'encoded' => 'Encoded',
+    'validated' => 'Validated',
+    'approved' => 'Approved',
+    'reported' => 'Reported',
     'released' => 'Released',
 ];
 ?>
@@ -49,8 +66,28 @@ $filters = [
     <div class="card-head">
         <div>
             <h1>Laboratory Results</h1>
-            <p class="muted">Encode values, review rule-based + AI warnings, then approve for release.</p>
+            <p class="muted">Results are stored in Render Postgres (or local MySQL). Encode values, review rule-based + AI warnings, then approve for release.</p>
         </div>
+        <?php if (can('view_database')): ?>
+            <a class="btn btn-small btn-secondary" href="<?= e(base_url('admin/database.php')) ?>">Database control</a>
+        <?php endif; ?>
+    </div>
+    <p class="workflow-hint">Pipeline: pending → encode → validate (rules + AI) → approve → generate report → release. New result rows appear automatically when a lab request is created.</p>
+    <div class="result-pipeline" aria-label="Result counts by status">
+        <a class="result-pipe<?= $status === '' && !$aiOnly ? ' is-active' : '' ?>" href="<?= e(base_url('results/index.php')) ?>">
+            All <strong><?= (int) ($counts['all'] ?? 0) ?></strong>
+        </a>
+        <?php foreach ($pipeline as $value => $label): ?>
+            <?php
+            $href = 'results/index.php?status=' . rawurlencode($value);
+            if ($q !== '') {
+                $href .= '&q=' . rawurlencode($q);
+            }
+            ?>
+            <a class="result-pipe<?= !$aiOnly && $status === $value ? ' is-active' : '' ?>" href="<?= e(base_url($href)) ?>">
+                <?= e($label) ?> <strong><?= (int) ($counts[$value] ?? 0) ?></strong>
+            </a>
+        <?php endforeach; ?>
     </div>
     <form method="get" class="toolbar-form" role="search">
         <input name="q" value="<?= e($q) ?>" placeholder="Search result, request, patient, panel…">
@@ -90,8 +127,20 @@ $filters = [
 <div class="card">
     <?php if (!$rows): ?>
         <div class="empty-state">
-            <p><?= ($q !== '' || $status !== '' || $aiOnly) ? 'No results match these filters.' : 'No results in the queue yet. Results appear when a lab request is created.' ?></p>
-            <a class="btn btn-secondary" href="<?= e(base_url('requests/index.php')) ?>">View requests</a>
+            <?php if ($aiOnly && ($counts['all'] ?? 0) > 0): ?>
+                <p>No AI warnings in the queue. Other results are already in the database.</p>
+                <a class="btn" href="<?= e(base_url('results/index.php')) ?>">View all results</a>
+            <?php elseif ($status !== '' || $q !== ''): ?>
+                <p>No results match these filters.</p>
+                <a class="btn" href="<?= e(base_url('results/index.php')) ?>">View all results</a>
+            <?php else: ?>
+                <p>No result rows yet. Load the demo cases (pending, AI warning, approved, released) or create a lab request.</p>
+                <form method="post" style="display:inline">
+                    <input type="hidden" name="action" value="seed_demo">
+                    <button class="btn" type="submit">Load demo results</button>
+                </form>
+                <a class="btn btn-secondary" href="<?= e(base_url('requests/create.php')) ?>">New request</a>
+            <?php endif; ?>
         </div>
     <?php else: ?>
         <div class="table-scroll">

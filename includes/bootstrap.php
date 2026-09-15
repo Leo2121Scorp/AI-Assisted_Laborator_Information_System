@@ -84,6 +84,72 @@ function db_driver(): string
 }
 
 /**
+ * INSERT and return the new id. Postgres PDO lastInsertId() is often 0 unless
+ * the statement uses RETURNING id — which is why Render requests created no results.
+ */
+function db_insert(string $sql, array $params = [], ?PDO $pdo = null): int
+{
+    $pdo = $pdo ?? db();
+    $driver = (string) $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+    if ($driver === 'pgsql' && stripos($sql, 'returning') === false) {
+        $sql = rtrim($sql, "; \t\n\r") . ' RETURNING id';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
+    }
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    return (int) $pdo->lastInsertId();
+}
+
+/**
+ * Safe connection facts for the Database control page (never includes the password).
+ *
+ * @return array{driver:string,host:string,port:int,dbname:string,username:string,hosted:bool,sslmode:?string,is_render:bool,url_set:bool,engine_label:string}
+ */
+function db_public_info(): array
+{
+    $cfg = require __DIR__ . '/../config/database.php';
+    $host = (string) ($cfg['host'] ?? '');
+    $isRender = str_contains($host, 'render.com')
+        || str_starts_with($host, 'dpg-')
+        || ailab_env('RENDER') === 'true';
+    $driver = (string) ($cfg['driver'] ?? 'mysql');
+    return [
+        'driver' => $driver,
+        'host' => $host,
+        'port' => (int) ($cfg['port'] ?? 0),
+        'dbname' => (string) ($cfg['dbname'] ?? ''),
+        'username' => (string) ($cfg['username'] ?? ''),
+        'hosted' => !empty($cfg['hosted']),
+        'sslmode' => isset($cfg['sslmode']) ? (string) $cfg['sslmode'] : null,
+        'is_render' => $isRender,
+        'url_set' => ailab_env('DATABASE_URL') !== null || ailab_env('PGHOST') !== null,
+        'engine_label' => $driver === 'pgsql' ? 'PostgreSQL' : 'MySQL',
+    ];
+}
+
+/** @return array<string,int> */
+function result_status_counts(): array
+{
+    $keys = ['pending', 'encoded', 'validated', 'approved', 'reported', 'released'];
+    $out = array_fill_keys($keys, 0);
+    try {
+        $rows = db()->query('SELECT status, COUNT(*) AS n FROM lab_results GROUP BY status')->fetchAll();
+        foreach ($rows as $row) {
+            $status = (string) $row['status'];
+            if (isset($out[$status])) {
+                $out[$status] = (int) $row['n'];
+            }
+        }
+    } catch (Throwable $e) {
+        return $out + ['all' => 0];
+    }
+    $out['all'] = array_sum($out);
+    return $out;
+}
+
+/**
  * Portable ORDER BY priority list (replaces MySQL FIELD()).
  * Example: sql_order_by_list('s.status', ['missing','delayed','pending'])
  */
@@ -178,3 +244,4 @@ require_once __DIR__ . '/validation.php';
 require_once __DIR__ . '/ai_client.php';
 require_once __DIR__ . '/workflow.php';
 require_once __DIR__ . '/guides.php';
+require_once __DIR__ . '/demo_seed.php';

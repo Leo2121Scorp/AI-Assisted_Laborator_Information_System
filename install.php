@@ -138,6 +138,10 @@ try {
     $ins->execute(['staff', $hash, 'Administrative Staff', 'staff']);
     $messages[] = 'Demo users ready (password: password123).';
 
+    require_once __DIR__ . '/includes/demo_seed.php';
+    $demo = seed_demo_lab_cases($pdo);
+    $messages[] = $demo['message'];
+
     if (!is_dir(__DIR__ . '/backups')) {
         mkdir(__DIR__ . '/backups', 0775, true);
     }

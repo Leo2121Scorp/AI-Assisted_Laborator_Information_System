@@ -42,16 +42,17 @@ See [`docs/RBAC_AND_STATE_MACHINE.md`](docs/RBAC_AND_STATE_MACHINE.md), [`docs/E
 
 ## Deploy on Render (free)
 
-Render has **Postgres** (not MySQL). This repo includes `render.yaml` + Postgres schema.
+Render has **Postgres** (not MySQL). This repo includes `render.yaml` (`ailab-web`, `ailab-ai`, `ailab-db`) and a Postgres schema.
 
 1. Push this repo to GitHub.
 2. In Render: **New** → **Blueprint** → connect the GitHub repo (uses `render.yaml`).
-3. Apply the blueprint (creates `ailab-web`, `ailab-ai`, and free Postgres).
-4. Wait until both web services are Live, then open:
+3. Apply the blueprint (creates `ailab-web`, `ailab-ai`, and Postgres `ailab-db`, and sets `DATABASE_URL`).
+4. Wait until both web services are Live. Schema/demo users install on boot; you can also open:
    `https://ailab-web-XXXX.onrender.com/install.php`
-5. Log in with `manager` / `password123`, then remove or protect `install.php`.
+5. Log in as `medtech` / `password123`. Dashboard **Quick actions → Results** is the encoding queue.
+6. Managers: **Database** inspects live table counts. Full steps: [`docs/RENDER_DATABASE.md`](docs/RENDER_DATABASE.md).
 
-Free services sleep after idle time — first load can take ~30–60s.
+Free services sleep after idle time — first load can take ~30–60s. Free workspaces allow **one** Postgres; if create fails, reuse the existing instance’s Internal URL.
 
 ### Manual (same screen you opened)
 

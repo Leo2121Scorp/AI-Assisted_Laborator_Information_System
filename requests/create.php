@@ -27,11 +27,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->beginTransaction();
         try {
             $reqCode = generate_code('RQ');
-            $pdo->prepare(
+            $requestId = db_insert(
                 'INSERT INTO lab_requests (request_code, patient_id, requesting_physician, clinical_notes, status, created_by)
-                 VALUES (?, ?, ?, ?, \'open\', ?)'
-            )->execute([$reqCode, $patientId, $physician ?: null, $notes ?: null, current_user()['id']]);
-            $requestId = (int) $pdo->lastInsertId();
+                 VALUES (?, ?, ?, ?, \'open\', ?)',
+                [$reqCode, $patientId, $physician ?: null, $notes ?: null, current_user()['id']],
+                $pdo
+            );
+            if ($requestId <= 0) {
+                throw new RuntimeException('Could not read new request id (Postgres RETURNING).');
+            }
 
             $insTest = $pdo->prepare('INSERT INTO request_tests (lab_request_id, lab_test_id) VALUES (?, ?)');
             $panelCodes = [];
@@ -44,11 +48,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $specCode = generate_code('SP');
-            $pdo->prepare(
+            $specimenId = db_insert(
                 'INSERT INTO specimens (specimen_code, lab_request_id, specimen_type, status, updated_by)
-                 VALUES (?, ?, ?, \'pending\', ?)'
-            )->execute([$specCode, $requestId, $specimenType ?: 'Blood', current_user()['id']]);
-            $specimenId = (int) $pdo->lastInsertId();
+                 VALUES (?, ?, ?, \'pending\', ?)',
+                [$specCode, $requestId, $specimenType ?: 'Blood', current_user()['id']],
+                $pdo
+            );
+            if ($specimenId <= 0) {
+                throw new RuntimeException('Could not read new specimen id.');
+            }
 
             // One result record per panel
             foreach (array_keys($panelCodes) as $panel) {

@@ -24,18 +24,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        $code = generate_code('PT');
-        $stmt = db()->prepare(
-            'INSERT INTO patients (patient_code, first_name, last_name, middle_name, sex, birth_date, contact_number, address, created_by)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        );
-        $stmt->execute([
-            $code, $first, $last, $middle ?: null, $sex, $birth, $contact ?: null, $address ?: null, current_user()['id']
-        ]);
-        $id = (int) db()->lastInsertId();
-        audit_log('patient_create', 'patient', $id, "Registered {$code}");
-        flash('success', "Patient {$code} registered.");
-        redirect('patients/view.php?id=' . $id);
+        try {
+            $code = generate_code('PT');
+            $id = db_insert(
+                'INSERT INTO patients (patient_code, first_name, last_name, middle_name, sex, birth_date, contact_number, address, created_by)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [$code, $first, $last, $middle ?: null, $sex, $birth, $contact ?: null, $address ?: null, current_user()['id']]
+            );
+            if ($id <= 0) {
+                throw new RuntimeException('Could not read new patient id.');
+            }
+            audit_log('patient_create', 'patient', $id, "Registered {$code}");
+            flash('success', "Patient {$code} registered.");
+            redirect('patients/view.php?id=' . $id);
+        } catch (Throwable $e) {
+            $errors[] = 'Could not save patient: ' . $e->getMessage();
+        }
     }
 }
 

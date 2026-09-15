@@ -43,7 +43,7 @@ $guideStorageKey = 'ailis_guide_seen_' . (user_role() ?? 'guest');
                             $nodes = match ($demo) {
                                 'staff-path' => ['Patient', 'Request', 'Collect', 'Report'],
                                 'medtech-path' => ['Process', 'Encode', 'AI review', 'Approve', 'Release'],
-                                'manager-path' => ['Dashboard', 'Users', 'Ranges', 'Backup', 'Audit'],
+                                'manager-path' => ['Dashboard', 'Results', 'Database', 'Backup'],
                                 'dashboard-watch' => ['Delays', 'Review', 'AI flags', 'Actions'],
                                 default => ['Start', 'Work', 'Done'],
                             };

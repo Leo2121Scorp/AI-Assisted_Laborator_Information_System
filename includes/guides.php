@@ -64,7 +64,7 @@ function guide_for_role(?string $role = null): array
                 ],
                 [
                     'title' => 'Encode results',
-                    'body' => 'Open Results, pick a pending/encoded panel, enter values, and save. Rule-based checks run immediately; out-of-range values show soft warnings. Impossible values are blocked.',
+                    'body' => 'Dashboard Quick actions → Results (or Encode pending). Open a panel, enter values, and save. Rule-based checks run immediately; out-of-range values show soft warnings. Impossible values are blocked. Result rows are created when a lab request is saved — they live in the Render Postgres database.',
                     'demo' => 'result-encode',
                     'cta' => ['label' => 'Open Results', 'href' => 'results/index.php'],
                 ],
@@ -84,7 +84,7 @@ function guide_for_role(?string $role = null): array
         ROLE_MANAGER => [
             'id' => 'manager',
             'title' => 'Manager quick-start guide',
-            'subtitle' => 'Oversee operations, users, ranges, backups, and the full lab pipeline.',
+            'subtitle' => 'Oversee operations, results, the Render database, users, ranges, and backups.',
             'steps' => [
                 [
                     'title' => 'Full oversight',
@@ -114,6 +114,12 @@ function guide_for_role(?string $role = null): array
                     'body' => 'Run Backup regularly and review Audit for logins, encoding, approvals, releases, and backup events. This supports turnover accountability.',
                     'demo' => 'backup-audit',
                     'cta' => ['label' => 'Run Backup', 'href' => 'backup/index.php'],
+                ],
+                [
+                    'title' => 'Control the Render database',
+                    'body' => 'Database shows live Postgres connection facts, table row counts, and recent lab_results. On Render, DATABASE_URL must point at ailab-db (Internal URL). Results persist in Postgres — not on the web container disk. Use Backup before any restore or delete.',
+                    'demo' => 'backup-audit',
+                    'cta' => ['label' => 'Open Database', 'href' => 'admin/database.php'],
                 ],
             ],
         ],
