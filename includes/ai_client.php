@@ -244,27 +244,33 @@ function ai_health(): bool
     return ai_health_ping(5);
 }
 
-function openrouter_configured(): bool
+function groq_configured(): bool
 {
-    return trim((string) app_config('openrouter_api_key', '')) !== ''
+    return trim((string) app_config('groq_api_key', '')) !== ''
         || trim((string) app_config('backup_ai_api_key', '')) !== '';
 }
 
+/** @deprecated Use groq_configured() */
+function openrouter_configured(): bool
+{
+    return groq_configured();
+}
+
 /**
- * Ordered LLM gateways: OpenRouter first, NaraRouter backup second.
+ * Ordered LLM gateways: Groq first, NaraRouter backup second.
  *
  * @return list<array{name:string,api_key:string,base_url:string,model:string}>
  */
 function ai_llm_providers(): array
 {
     $providers = [];
-    $primaryKey = trim((string) app_config('openrouter_api_key', ''));
+    $primaryKey = trim((string) app_config('groq_api_key', ''));
     if ($primaryKey !== '') {
         $providers[] = [
-            'name' => 'openrouter',
+            'name' => 'groq',
             'api_key' => $primaryKey,
-            'base_url' => rtrim((string) app_config('openrouter_base_url', 'https://openrouter.ai/api/v1'), '/'),
-            'model' => (string) app_config('openrouter_model', 'openai/gpt-4o-mini'),
+            'base_url' => rtrim((string) app_config('groq_base_url', 'https://api.groq.com/openai/v1'), '/'),
+            'model' => (string) app_config('groq_model', 'llama-3.3-70b-versatile'),
         ];
     }
     $backupKey = trim((string) app_config('backup_ai_api_key', ''));
@@ -304,7 +310,7 @@ function ai_chat(string $message, array $history = [], ?string $role = null): ar
     }
 
     // Fallback: call providers from PHP when Python chat is down
-    if (openrouter_configured()) {
+    if (groq_configured()) {
         $direct = llm_chat_direct($payload);
         if (!empty($direct['ok'])) {
             return $direct;
@@ -320,7 +326,7 @@ function ai_chat(string $message, array $history = [], ?string $role = null): ar
         'ok' => false,
         'error' => $viaService['error'] ?? 'chat_unavailable',
         'detail' => $viaService['detail']
-            ?? 'AI chat is unavailable. Start the Python AI service and set OPENROUTER_API_KEY or BACKUP_AI_API_KEY.',
+            ?? 'AI chat is unavailable. Start the Python AI service and set GROQ_API_KEY or BACKUP_AI_API_KEY.',
     ];
 }
 
@@ -373,7 +379,7 @@ function ai_chat_via_service(array $payload): array
 }
 
 /**
- * Try OpenRouter then NaraRouter (OpenAI-compatible).
+ * Try Groq then NaraRouter (OpenAI-compatible).
  *
  * @param array{message:string,history:list,role:string} $payload
  * @return array{ok:bool,reply?:string,model?:string,provider?:string,error?:string,detail?:string}

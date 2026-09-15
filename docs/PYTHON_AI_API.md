@@ -75,9 +75,9 @@ Anomaly example:
 
 HTTP 400 for bad input; 503 if model not loaded; 500 for unexpected errors. PHP treats AI failure as a soft warning (`AI service unavailable — manual review required`) and still allows MT review.
 
-## OpenRouter chat (`POST /chat`)
+## Groq chat (`POST /chat`)
 
-Manager / MedTech assistant powered by [OpenRouter](https://openrouter.ai/). Requires `OPENROUTER_API_KEY` (OS env or `config/env.php`).
+Manager / MedTech assistant powered by [Groq](https://console.groq.com/). Requires `GROQ_API_KEY` (OS env or `config/env.php`). Default model: `llama-3.3-70b-versatile`.
 
 Request:
 
@@ -98,13 +98,13 @@ Response:
 {
   "ok": true,
   "reply": "…",
-  "model": "openai/gpt-4o-mini"
+  "model": "llama-3.3-70b-versatile"
 }
 ```
 
-PHP UI calls `api/chat.php`, which prefers Python `/chat` and falls back to a direct OpenRouter request.
+PHP UI calls `api/chat.php`, which prefers Python `/chat` and falls back to a direct Groq request.
 
-When `/predict` flags an anomaly, the service may append a short OpenRouter advisory note to `warning_message` (still never auto-approves).
+When `/predict` flags an anomaly, the service may append a short Groq advisory note to `warning_message` (still never auto-approves).
 
 ## Training data assumptions
 

@@ -896,7 +896,7 @@ pre { max-width: 100%; overflow-x: auto; white-space: pre-wrap; }
   to { transform: rotate(360deg); }
 }
 
-/* Floating OpenRouter assistant (Manager / MedTech) */
+/* Floating Groq assistant (Manager / MedTech) */
 .sr-only {
   position: absolute;
   width: 1px;

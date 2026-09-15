@@ -1,5 +1,5 @@
 """
-Flask Isolation Forest + OpenRouter chat service for AI-Assisted LIS.
+Flask Isolation Forest + Groq chat service for AI-Assisted LIS.
 Run: python app.py
 Default: http://127.0.0.1:5001
 """
@@ -42,11 +42,11 @@ def _env(key: str, default: str = "") -> str:
     return _read_php_env(key) or default
 
 
-OPENROUTER_API_KEY = _env("OPENROUTER_API_KEY")
-OPENROUTER_MODEL = _env("OPENROUTER_MODEL", "openai/gpt-4o-mini")
-OPENROUTER_BASE = _env("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1").rstrip("/")
-OPENROUTER_SITE = os.environ.get("OPENROUTER_HTTP_REFERER", "https://ailab-lis.local")
-OPENROUTER_TITLE = os.environ.get("OPENROUTER_APP_TITLE", "AI-Assisted LIS")
+GROQ_API_KEY = _env("GROQ_API_KEY") or _env("OPENROUTER_API_KEY")
+GROQ_MODEL = _env("GROQ_MODEL") or _env("OPENROUTER_MODEL") or "llama-3.3-70b-versatile"
+GROQ_BASE = (_env("GROQ_BASE_URL") or "https://api.groq.com/openai/v1").rstrip("/")
+GROQ_SITE = os.environ.get("GROQ_HTTP_REFERER", "https://ailab-lis.local")
+GROQ_TITLE = os.environ.get("GROQ_APP_TITLE", "AI-Assisted LIS")
 
 BACKUP_AI_API_KEY = _env("BACKUP_AI_API_KEY")
 BACKUP_AI_BASE = _env("BACKUP_AI_BASE_URL", "https://router.bynara.id/v1").rstrip("/")
@@ -103,12 +103,12 @@ def load_model() -> None:
 
 def llm_providers() -> list[dict[str, str]]:
     providers: list[dict[str, str]] = []
-    if OPENROUTER_API_KEY:
+    if GROQ_API_KEY:
         providers.append({
-            "name": "openrouter",
-            "api_key": OPENROUTER_API_KEY,
-            "base_url": OPENROUTER_BASE,
-            "model": OPENROUTER_MODEL,
+            "name": "groq",
+            "api_key": GROQ_API_KEY,
+            "base_url": GROQ_BASE,
+            "model": GROQ_MODEL,
         })
     if BACKUP_AI_API_KEY:
         providers.append({
@@ -120,8 +120,12 @@ def llm_providers() -> list[dict[str, str]]:
     return providers
 
 
-def openrouter_ready() -> bool:
+def groq_ready() -> bool:
     return bool(llm_providers())
+
+
+def openrouter_ready() -> bool:
+    return groq_ready()
 
 
 def _chat_completions(provider: dict[str, str], messages: list[dict[str, str]], *, temperature: float, max_tokens: int) -> dict[str, Any]:
@@ -130,8 +134,8 @@ def _chat_completions(provider: dict[str, str], messages: list[dict[str, str]], 
     headers = {
         "Authorization": f"Bearer {provider['api_key']}",
         "Content-Type": "application/json",
-        "HTTP-Referer": OPENROUTER_SITE,
-        "X-Title": OPENROUTER_TITLE,
+        "HTTP-Referer": GROQ_SITE,
+        "X-Title": GROQ_TITLE,
     }
     payload = {
         "model": provider["model"],
@@ -176,10 +180,10 @@ def _chat_completions(provider: dict[str, str], messages: list[dict[str, str]], 
     }
 
 
-def openrouter_chat(messages: list[dict[str, str]], *, temperature: float = 0.4, max_tokens: int = 700) -> dict[str, Any]:
+def groq_chat(messages: list[dict[str, str]], *, temperature: float = 0.4, max_tokens: int = 700) -> dict[str, Any]:
     providers = llm_providers()
     if not providers:
-        return {"ok": False, "error": "llm_not_configured", "detail": "OPENROUTER_API_KEY / BACKUP_AI_API_KEY missing"}
+        return {"ok": False, "error": "llm_not_configured", "detail": "GROQ_API_KEY / BACKUP_AI_API_KEY missing"}
 
     last: dict[str, Any] = {"ok": False, "error": "all_providers_failed", "detail": "All LLM providers failed"}
     for provider in providers:
@@ -191,7 +195,7 @@ def openrouter_chat(messages: list[dict[str, str]], *, temperature: float = 0.4,
 
 def explain_anomaly(features: dict, sex: str, age: Any, score: float) -> str | None:
     """Optional LLM note when Isolation Forest flags a CBC — advisory only."""
-    if not openrouter_ready():
+    if not groq_ready():
         return None
     prompt = (
         "An Isolation Forest model flagged this CBC panel as anomalous. "
@@ -199,7 +203,7 @@ def explain_anomaly(features: dict, sex: str, age: Any, score: float) -> str | N
         "Do not diagnose. Mention which values look most unusual if obvious.\n"
         f"sex={sex}, age={age}, score={score:.4f}, features={json.dumps(features)}"
     )
-    result = openrouter_chat(
+    result = groq_chat(
         [
             {"role": "system", "content": LIS_SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
@@ -254,15 +258,16 @@ def health():
         "ok": True,
         "model_loaded": loaded,
         "model_version": meta.get("model_version"),
-        "openrouter": openrouter_ready(),
+        "groq": groq_ready(),
+        "openrouter": groq_ready(),
         "chat_providers": providers,
-        "chat_model": OPENROUTER_MODEL if OPENROUTER_API_KEY else (BACKUP_AI_MODEL if BACKUP_AI_API_KEY else None),
+        "chat_model": GROQ_MODEL if GROQ_API_KEY else (BACKUP_AI_MODEL if BACKUP_AI_API_KEY else None),
     })
 
 
 @app.post("/chat")
 def chat():
-    """OpenRouter-backed assistant for Manager / MedTech (proxied from PHP)."""
+    """Groq-backed assistant for Manager / MedTech (proxied from PHP)."""
     payload = request.get_json(silent=True) or {}
     message = str(payload.get("message") or "").strip()
     history = payload.get("history") or []
@@ -286,7 +291,7 @@ def chat():
                 messages.append({"role": r, "content": c[:4000]})
     messages.append({"role": "user", "content": message})
 
-    result = openrouter_chat(messages)
+    result = groq_chat(messages)
     status = 200 if result.get("ok") else 502
     return jsonify(result), status
 
@@ -368,7 +373,7 @@ def predict():
         "llm_note": llm_note,
         "model_version": meta.get("model_version"),
         "result_id": payload.get("result_id"),
-        "openrouter": openrouter_ready(),
+        "groq": groq_ready(),
     })
 
 

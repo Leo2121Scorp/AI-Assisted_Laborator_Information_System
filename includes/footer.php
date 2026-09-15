@@ -153,7 +153,7 @@ $guideStorageKey = 'ailis_guide_seen_' . (user_role() ?? 'guest');
         <header class="ai-chat-head">
             <div>
                 <strong>LIS Assistant</strong>
-                <p>OpenRouter · Manager &amp; MedTech</p>
+                <p>Groq · Manager &amp; MedTech</p>
             </div>
             <button type="button" class="ai-chat-close" id="ai-chat-close" aria-label="Close assistant">&times;</button>
         </header>

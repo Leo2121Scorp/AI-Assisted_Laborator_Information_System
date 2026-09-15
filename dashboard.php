@@ -35,7 +35,7 @@ $delayed->execute([$slaHours]);
 $delayedRows = $delayed->fetchAll();
 
 $aiHealth = ai_health();
-$chatReady = openrouter_configured();
+$chatReady = groq_configured();
 
 $quickActions = match ($role) {
     ROLE_STAFF => [
@@ -80,12 +80,12 @@ require __DIR__ . '/includes/header.php';
         <p class="ai-status">
             AI service:
             <?php if ($aiHealth): ?>
-                <span class="badge badge-ok">online</span>
+                <span class="badge badge-ok" id="ai-service-badge">online</span>
             <?php else: ?>
-                <span class="badge badge-warning">offline (manual review still available)</span>
+                <span class="badge badge-warning" id="ai-service-badge">offline (manual review still available)</span>
             <?php endif; ?>
             <?php if (can('use_ai_chat')): ?>
-                · OpenRouter chat:
+                · Groq chat:
                 <?php if ($chatReady): ?>
                     <span class="badge badge-ok">ready</span>
                 <?php else: ?>

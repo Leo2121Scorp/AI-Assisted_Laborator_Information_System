@@ -47,7 +47,7 @@ foreach ($history as $item) {
 $result = ai_chat($message, $cleanHistory, user_role());
 
 if (!empty($result['ok'])) {
-    audit_log('ai_chat', 'user', (int) current_user()['id'], 'OpenRouter assistant query');
+    audit_log('ai_chat', 'user', (int) current_user()['id'], 'Groq assistant query');
     echo json_encode([
         'ok' => true,
         'reply' => $result['reply'] ?? '',
