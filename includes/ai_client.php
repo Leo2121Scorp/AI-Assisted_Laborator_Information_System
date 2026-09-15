@@ -40,6 +40,8 @@ function ai_curl_opts(int $timeout): array
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_CONNECTTIMEOUT => $timeout,
         CURLOPT_TIMEOUT => $timeout,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_MAXREDIRS => 3,
         CURLOPT_ENCODING => '',
         CURLOPT_HTTPHEADER => ['Accept: application/json', 'Content-Type: application/json'],
     ];
@@ -49,6 +51,93 @@ function ai_curl_opts(int $timeout): array
     return $opts;
 }
 
+/** @return array{body:?string,status:int,error:?string} */
+function ai_http_get(string $url, int $timeout): array
+{
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, ai_curl_opts($timeout));
+        $body = curl_exec($ch);
+        $errno = curl_errno($ch);
+        $error = curl_error($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($errno || $body === false) {
+            return ['body' => null, 'status' => $status, 'error' => $error ?: 'curl_error'];
+        }
+        return ['body' => is_string($body) ? $body : null, 'status' => $status, 'error' => null];
+    }
+
+    $ctx = stream_context_create([
+        'http' => [
+            'method' => 'GET',
+            'timeout' => $timeout,
+            'ignore_errors' => true,
+            'header' => "Accept: application/json\r\n",
+        ],
+    ]);
+    $body = @file_get_contents($url, false, $ctx);
+    $status = 0;
+    if (isset($http_response_header[0]) && preg_match('/\s(\d{3})\s/', $http_response_header[0], $m)) {
+        $status = (int) $m[1];
+    }
+    if ($body === false) {
+        return ['body' => null, 'status' => $status, 'error' => 'http_get_failed'];
+    }
+    return ['body' => $body, 'status' => $status, 'error' => null];
+}
+
+function ai_find_python(): ?string
+{
+    $candidates = PHP_OS_FAMILY === 'Windows'
+        ? ['py -3', 'py', 'python', 'python3']
+        : ['python3', 'python'];
+    foreach ($candidates as $bin) {
+        $out = [];
+        $code = 1;
+        @exec($bin . ' --version 2>&1', $out, $code);
+        if ($code === 0) {
+            return $bin;
+        }
+    }
+    return null;
+}
+
+function ai_try_start_local(): void
+{
+    static $attempted = false;
+    if ($attempted) {
+        return;
+    }
+    $attempted = true;
+
+    $aiDir = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'ai';
+    $app = $aiDir . DIRECTORY_SEPARATOR . 'app.py';
+    if (!is_file($app)) {
+        return;
+    }
+
+    $lock = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'ailab_iforest.start.lock';
+    if (is_file($lock) && (time() - (int) filemtime($lock)) < 90) {
+        return;
+    }
+
+    $python = ai_find_python();
+    if ($python === null) {
+        return;
+    }
+
+    @file_put_contents($lock, (string) time());
+
+    if (PHP_OS_FAMILY === 'Windows') {
+        $inner = 'cd /d ' . escapeshellarg($aiDir) . ' && ' . $python . ' app.py';
+        @pclose(@popen('cmd /c start /B "" cmd /c ' . escapeshellarg($inner), 'r'));
+        return;
+    }
+
+    @exec('cd ' . escapeshellarg($aiDir) . ' && ' . $python . ' app.py >/dev/null 2>&1 &');
+}
+
 /**
  * Call Python Isolation Forest service.
  *
@@ -56,65 +145,101 @@ function ai_curl_opts(int $timeout): array
  */
 function ai_predict(array $payload): array
 {
-    $endpoint = app_config('ai_endpoint');
     $timeout = (int) app_config('ai_timeout_seconds', 5);
-
-    $ch = curl_init($endpoint);
-    curl_setopt_array($ch, ai_curl_opts($timeout) + [
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
-    ]);
-    $body = curl_exec($ch);
-    $errno = curl_errno($ch);
-    $error = curl_error($ch);
-    $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($errno || $body === false) {
-        return ai_unavailable($error ?: 'curl_error');
+    $configured = (string) app_config('ai_endpoint');
+    $endpoints = [];
+    if ($configured !== '') {
+        $endpoints[] = $configured;
+    }
+    if (!preg_match('#://127\.0\.0\.1:5001(/|$)#', $configured)) {
+        array_unshift($endpoints, 'http://127.0.0.1:5001/predict');
     }
 
-    $data = ai_decode_response_body($body);
-    if (!is_array($data)) {
-        $hint = $status > 0 ? "HTTP {$status}" : 'empty/non-JSON body';
-        return ai_unavailable('invalid_json', "AI service unavailable ({$hint}) — Isolation Forest was not run.");
-    }
+    $last = ai_unavailable('ai_unreachable');
+    foreach (array_unique($endpoints) as $endpoint) {
+        if (!function_exists('curl_init')) {
+            $last = ai_unavailable('curl_missing', 'PHP curl extension is required for Isolation Forest.');
+            continue;
+        }
+        $ch = curl_init($endpoint);
+        curl_setopt_array($ch, ai_curl_opts($timeout) + [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
+        ]);
+        $body = curl_exec($ch);
+        $errno = curl_errno($ch);
+        $error = curl_error($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
 
-    if ($status >= 400 || empty($data['ok'])) {
+        if ($errno || $body === false) {
+            $last = ai_unavailable($error ?: 'curl_error');
+            continue;
+        }
+
+        $data = ai_decode_response_body($body);
+        if (!is_array($data)) {
+            $hint = $status > 0 ? "HTTP {$status}" : 'empty/non-JSON body';
+            $last = ai_unavailable('invalid_json', "AI service unavailable ({$hint}) — Isolation Forest was not run.");
+            continue;
+        }
+
+        if ($status >= 400 || empty($data['ok'])) {
+            $last = [
+                'ok' => false,
+                'is_anomaly' => false,
+                'score' => null,
+                'warning_message' => $data['detail'] ?? 'AI service error — Isolation Forest was not run.',
+                'model_version' => $data['model_version'] ?? null,
+                'raw' => $data,
+                'error' => $data['error'] ?? 'http_' . $status,
+            ];
+            if ($status === 0 || $status >= 500) {
+                continue;
+            }
+            return $last;
+        }
+
         return [
-            'ok' => false,
-            'is_anomaly' => false,
-            'score' => null,
-            'warning_message' => $data['detail'] ?? 'AI service error — Isolation Forest was not run.',
+            'ok' => true,
+            'is_anomaly' => !empty($data['is_anomaly']),
+            'score' => isset($data['score']) && is_numeric($data['score']) ? (float) $data['score'] : null,
+            'warning_message' => $data['warning_message'] ?? null,
             'model_version' => $data['model_version'] ?? null,
             'raw' => $data,
-            'error' => $data['error'] ?? 'http_' . $status,
         ];
     }
 
-    return [
-        'ok' => true,
-        'is_anomaly' => !empty($data['is_anomaly']),
-        'score' => isset($data['score']) && is_numeric($data['score']) ? (float) $data['score'] : null,
-        'warning_message' => $data['warning_message'] ?? null,
-        'model_version' => $data['model_version'] ?? null,
-        'raw' => $data,
-    ];
+    return $last;
+}
+
+function ai_health_ping(int $timeout = 2): bool
+{
+    $configured = (string) app_config('ai_health_endpoint');
+    $endpoints = ['http://127.0.0.1:5001/health'];
+    if ($configured !== '' && !preg_match('#://127\.0\.0\.1:5001(/|$)#', $configured)) {
+        $endpoints[] = $configured;
+    }
+    foreach (array_unique($endpoints) as $endpoint) {
+        $res = ai_http_get($endpoint, $timeout);
+        if ($res['body'] === null || $res['status'] !== 200) {
+            continue;
+        }
+        $data = ai_decode_response_body($res['body']);
+        if (is_array($data) && (!empty($data['ok']) || array_key_exists('model_loaded', $data))) {
+            return true;
+        }
+    }
+    return false;
 }
 
 function ai_health(): bool
 {
-    $endpoint = app_config('ai_health_endpoint');
-    $ch = curl_init($endpoint);
-    curl_setopt_array($ch, ai_curl_opts(2));
-    $body = curl_exec($ch);
-    $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    if ($body === false || $status !== 200) {
-        return false;
+    if (ai_health_ping(2)) {
+        return true;
     }
-    $data = ai_decode_response_body($body);
-    return is_array($data) && (!empty($data['ok']) || !empty($data['model_loaded']));
+    ai_try_start_local();
+    return ai_health_ping(3);
 }
 
 function openrouter_configured(): bool

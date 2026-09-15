@@ -15,6 +15,7 @@ import joblib
 import numpy as np
 import requests
 from flask import Flask, jsonify, request
+from werkzeug.exceptions import HTTPException
 
 ROOT = Path(__file__).resolve().parent
 MODEL_PATH = ROOT / "models" / "isolation_forest_cbc.joblib"
@@ -227,10 +228,20 @@ def _json_safe(value: Any) -> Any:
     return value
 
 
+@app.errorhandler(HTTPException)
+def on_http_error(exc: HTTPException):
+    return jsonify({"ok": False, "error": "http_error", "detail": exc.description}), exc.code
+
+
 @app.errorhandler(Exception)
 def on_error(exc: Exception):
     app.logger.exception("AI service error")
     return jsonify({"ok": False, "error": "internal", "detail": str(exc)}), 500
+
+
+@app.get("/")
+def root():
+    return jsonify({"ok": True, "service": "ailab-ai", "health": "/health"}), 200
 
 
 @app.get("/health")
@@ -240,7 +251,7 @@ def health():
     providers = [p["name"] for p in llm_providers()]
     loaded = model is not None
     return jsonify({
-        "ok": loaded,
+        "ok": True,
         "model_loaded": loaded,
         "model_version": meta.get("model_version"),
         "openrouter": openrouter_ready(),
@@ -282,6 +293,9 @@ def chat():
 
 @app.post("/predict")
 def predict():
+    global model
+    if model is None:
+        load_model()
     if model is None:
         return jsonify({"ok": False, "error": "model_not_loaded", "detail": "Run train_model.py first"}), 503
 
@@ -357,6 +371,11 @@ def predict():
         "openrouter": openrouter_ready(),
     })
 
+
+try:
+    load_model()
+except Exception as exc:  # pragma: no cover - startup safeguard
+    app.logger.warning("Startup model load failed: %s", exc)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5001"))
