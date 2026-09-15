@@ -216,8 +216,10 @@ function ai_predict(array $payload): array
 function ai_health_ping(int $timeout = 2): bool
 {
     $configured = (string) app_config('ai_health_endpoint');
-    $endpoints = ['http://127.0.0.1:5001/health'];
-    if ($configured !== '' && !preg_match('#://127\.0\.0\.1:5001(/|$)#', $configured)) {
+    $endpoints = [];
+    $local = 'http://127.0.0.1:' . (ailab_app_env('AI_PORT') ?: '5001') . '/health';
+    $endpoints[] = $local;
+    if ($configured !== '' && $configured !== $local) {
         $endpoints[] = $configured;
     }
     foreach (array_unique($endpoints) as $endpoint) {
@@ -235,11 +237,11 @@ function ai_health_ping(int $timeout = 2): bool
 
 function ai_health(): bool
 {
-    if (ai_health_ping(2)) {
+    if (ai_health_ping(3)) {
         return true;
     }
     ai_try_start_local();
-    return ai_health_ping(3);
+    return ai_health_ping(5);
 }
 
 function openrouter_configured(): bool

@@ -34,8 +34,13 @@ if (!function_exists('ailab_app_env')) {
 
 $aiBase = ailab_app_env('AI_SERVICE_URL') ?? 'http://127.0.0.1:5001';
 $aiBase = rtrim($aiBase, '/');
-if ($aiBase !== '' && !preg_match('#^https?://#i', $aiBase)) {
-    // Render often injects short service name; expand to public host
+$embedded = ailab_app_env('START_EMBEDDED_AI');
+$onRender = ailab_app_env('RENDER') === 'true';
+// On Render the sibling ailab-ai service sleeps; Isolation Forest runs in this container.
+if ($embedded !== '0' && ($embedded === '1' || $onRender)) {
+    $aiPort = ailab_app_env('AI_PORT') ?: '5001';
+    $aiBase = 'http://127.0.0.1:' . $aiPort;
+} elseif ($aiBase !== '' && !preg_match('#^https?://#i', $aiBase)) {
     if (!str_contains($aiBase, '.') && preg_match('/^ailab-ai/i', $aiBase)) {
         $aiBase .= '.onrender.com';
     }
