@@ -138,6 +138,14 @@ try {
     $ins->execute(['staff', $hash, 'Administrative Staff', 'staff']);
     $messages[] = 'Demo users ready (password: password123).';
 
+    require_once __DIR__ . '/includes/catalog.php';
+    try {
+        ensure_lab_test_catalog($pdo);
+        $messages[] = 'Lab test catalog ready (CBC / CHEMISTRY / URINE).';
+    } catch (Throwable $e) {
+        $messages[] = 'Catalog refresh warning: ' . $e->getMessage();
+    }
+
     require_once __DIR__ . '/includes/demo_seed.php';
     $demo = seed_demo_lab_cases($pdo);
     $messages[] = $demo['message'];

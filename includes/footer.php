@@ -66,6 +66,8 @@ $guideStorageKey = 'ailis_guide_seen_' . (user_role() ?? 'guest');
                                 <label class="demo-check" style="--i:0"><span></span> CBC</label>
                                 <label class="demo-check" style="--i:1"><span></span> Chemistry</label>
                                 <label class="demo-check" style="--i:2"><span></span> Urinalysis</label>
+                                <label class="demo-check" style="--i:1"><span></span> Chemistry</label>
+                                <label class="demo-check" style="--i:2"><span></span> Urinalysis</label>
                                 <div class="demo-btn-pulse">Create request</div>
                             </div>
                         <?php elseif (in_array($demo, ['specimen-collect', 'specimen-process'], true)): ?>

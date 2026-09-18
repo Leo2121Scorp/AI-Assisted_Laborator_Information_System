@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 /**
  * Rule-based validation against reference_ranges.
+ * Numeric analytes use min/max/critical checks; qualitative (is_numeric=0) store text_value.
  *
  * @return array{ok:bool, hard_block:bool, warnings:string[], values:array}
  */
@@ -19,14 +20,40 @@ function validate_result_values(array $patient, array $inputs): array
         if ($raw === '' || $raw === null) {
             continue;
         }
+
+        $test = get_lab_test($testId);
+        $label = $test
+            ? (($test['panel_code'] ?? '') . ' / ' . ($test['test_code'] ?? "ID{$testId}"))
+            : ("ID{$testId}");
+        $isNumeric = $test ? ((int) ($test['is_numeric'] ?? 1) === 1) : true;
+
+        if (!$isNumeric) {
+            $text = trim((string) $raw);
+            if ($text === '') {
+                continue;
+            }
+            if (mb_strlen($text) > 120) {
+                $warnings[] = "{$label}: value is too long (max 120 characters).";
+                $hardBlock = true;
+                continue;
+            }
+            $normalized[$testId] = [
+                'numeric_value' => null,
+                'text_value' => $text,
+                'is_out_of_range' => 0,
+                'is_critical' => 0,
+            ];
+            continue;
+        }
+
         if (!is_numeric($raw)) {
-            $warnings[] = "Test ID {$testId}: value must be numeric.";
+            $warnings[] = "{$label}: value must be numeric.";
             $hardBlock = true;
             continue;
         }
         $value = (float) $raw;
         if ($value < 0) {
-            $warnings[] = "Test ID {$testId}: negative values are not allowed.";
+            $warnings[] = "{$label}: negative values are not allowed.";
             $hardBlock = true;
         }
 
@@ -35,8 +62,6 @@ function validate_result_values(array $patient, array $inputs): array
         $critical = false;
 
         if ($range) {
-            $test = get_lab_test($testId);
-            $label = $test['test_code'] ?? ("ID{$testId}");
             if ($range['min_value'] !== null && $value < (float) $range['min_value']) {
                 $outOfRange = true;
                 $warnings[] = "{$label} ({$value}) is below reference minimum ({$range['min_value']}).";
@@ -62,6 +87,7 @@ function validate_result_values(array $patient, array $inputs): array
 
         $normalized[$testId] = [
             'numeric_value' => $value,
+            'text_value' => null,
             'is_out_of_range' => $outOfRange ? 1 : 0,
             'is_critical' => $critical ? 1 : 0,
         ];

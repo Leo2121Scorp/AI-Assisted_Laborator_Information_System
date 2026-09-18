@@ -49,13 +49,15 @@ CREATE TABLE patients (
 -- ---------------------------------------------------------------------------
 CREATE TABLE lab_tests (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  test_code VARCHAR(30) NOT NULL UNIQUE,
+  test_code VARCHAR(30) NOT NULL,
   test_name VARCHAR(120) NOT NULL,
   panel_code VARCHAR(30) NOT NULL DEFAULT 'GENERAL',
   unit VARCHAR(40) NULL,
   is_numeric TINYINT(1) NOT NULL DEFAULT 1,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_panel_test (panel_code, test_code)
 ) ENGINE=InnoDB;
 
 CREATE TABLE reference_ranges (

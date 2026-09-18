@@ -24,7 +24,7 @@ $testsStmt = db()->prepare(
     'SELECT lt.* FROM request_tests rt
      JOIN lab_tests lt ON lt.id = rt.lab_test_id
      WHERE rt.lab_request_id = ? AND lt.panel_code = ?
-     ORDER BY lt.test_code'
+     ORDER BY lt.sort_order, lt.test_code'
 );
 $testsStmt->execute([$result['lab_request_id'], $result['panel_code']]);
 $tests = $testsStmt->fetchAll();
@@ -128,17 +128,23 @@ require __DIR__ . '/../includes/header.php';
             <thead><tr><th>Test</th><th>Unit</th><th>Value</th><th>Flags</th></tr></thead>
             <tbody>
             <?php foreach ($tests as $t): ?>
-                <?php $ex = $existing[(int)$t['id']] ?? null; ?>
+                <?php
+                $ex = $existing[(int)$t['id']] ?? null;
+                $isNumeric = (int) ($t['is_numeric'] ?? 1) === 1;
+                $displayValue = $isNumeric
+                    ? (string) ($ex['numeric_value'] ?? '')
+                    : (string) ($ex['text_value'] ?? '');
+                ?>
                 <tr>
                     <td><?= e($t['test_code'] . ' — ' . $t['test_name']) ?></td>
-                    <td><?= e($t['unit']) ?></td>
+                    <td><?= e($t['unit'] ?: ($isNumeric ? '—' : 'qualitative')) ?></td>
                     <td>
                         <?php if ($editable): ?>
                             <input name="values[<?= (int)$t['id'] ?>]"
-                                   value="<?= e($ex['numeric_value'] ?? '') ?>"
-                                   inputmode="decimal">
+                                   value="<?= e($displayValue) ?>"
+                                   <?= $isNumeric ? 'inputmode="decimal"' : 'placeholder="e.g. Neg, Trace, 1+"' ?>>
                         <?php else: ?>
-                            <?= e((string)($ex['numeric_value'] ?? '—')) ?>
+                            <?= e($displayValue !== '' ? $displayValue : '—') ?>
                         <?php endif; ?>
                     </td>
                     <td>

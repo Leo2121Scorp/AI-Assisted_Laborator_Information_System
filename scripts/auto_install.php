@@ -66,6 +66,13 @@ try {
     }
 
     if (!$needsInstall) {
+        require_once __DIR__ . '/../includes/catalog.php';
+        try {
+            ensure_lab_test_catalog($pdo);
+            fwrite(STDOUT, "auto_install: lab test catalog refreshed (CBC / CHEMISTRY / URINE).\n");
+        } catch (Throwable $e) {
+            fwrite(STDERR, 'auto_install: catalog refresh warning: ' . $e->getMessage() . "\n");
+        }
         require_once __DIR__ . '/../includes/demo_seed.php';
         $demo = seed_demo_lab_cases($pdo);
         fwrite(STDOUT, 'auto_install: already initialized; ' . $demo['message'] . "\n");
@@ -74,6 +81,13 @@ try {
 
     exec_sql_file($pdo, $schema);
     exec_sql_file($pdo, $seed);
+
+    require_once __DIR__ . '/../includes/catalog.php';
+    try {
+        ensure_lab_test_catalog($pdo);
+    } catch (Throwable $e) {
+        fwrite(STDERR, 'auto_install: catalog ensure warning: ' . $e->getMessage() . "\n");
+    }
 
     $hash = password_hash('password123', PASSWORD_DEFAULT);
     $pdo->exec('DELETE FROM users');

@@ -115,8 +115,8 @@ function encode_and_validate_result(int $resultId, array $inputs): array
     try {
         $pdo->prepare('DELETE FROM result_values WHERE lab_result_id = ?')->execute([$resultId]);
         $ins = $pdo->prepare(
-            'INSERT INTO result_values (lab_result_id, lab_test_id, numeric_value, is_out_of_range, is_critical)
-             VALUES (?, ?, ?, ?, ?)'
+            'INSERT INTO result_values (lab_result_id, lab_test_id, numeric_value, text_value, is_out_of_range, is_critical)
+             VALUES (?, ?, ?, ?, ?, ?)'
         );
         $features = [];
         foreach ($validation['values'] as $testId => $row) {
@@ -124,11 +124,12 @@ function encode_and_validate_result(int $resultId, array $inputs): array
                 $resultId,
                 $testId,
                 $row['numeric_value'],
+                $row['text_value'] ?? null,
                 $row['is_out_of_range'],
                 $row['is_critical'],
             ]);
             $test = get_lab_test((int) $testId);
-            if ($test) {
+            if ($test && $row['numeric_value'] !== null) {
                 $features[$test['test_code']] = $row['numeric_value'];
             }
         }

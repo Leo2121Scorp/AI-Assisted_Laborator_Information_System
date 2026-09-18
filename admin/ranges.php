@@ -26,12 +26,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $ranges = db()->query(
-    'SELECT rr.*, lt.test_code, lt.test_name
+    'SELECT rr.*, lt.test_code, lt.test_name, lt.panel_code
      FROM reference_ranges rr
      JOIN lab_tests lt ON lt.id = rr.lab_test_id
-     ORDER BY lt.panel_code, lt.test_code, rr.sex, rr.age_min'
+     ORDER BY lt.panel_code, lt.sort_order, lt.test_code, rr.sex, rr.age_min'
 )->fetchAll();
-$tests = db()->query('SELECT id, test_code, test_name FROM lab_tests WHERE is_active = 1 ORDER BY test_code')->fetchAll();
+$tests = db()->query('SELECT id, test_code, test_name, panel_code FROM lab_tests WHERE is_active = 1 ORDER BY panel_code, sort_order, test_code')->fetchAll();
 
 $pageTitle = 'Reference Ranges — AI-LIS';
 require __DIR__ . '/../includes/header.php';
@@ -47,7 +47,7 @@ require __DIR__ . '/../includes/header.php';
             <label>Test</label>
             <select name="lab_test_id" required>
                 <?php foreach ($tests as $t): ?>
-                    <option value="<?= (int)$t['id'] ?>"><?= e($t['test_code'] . ' — ' . $t['test_name']) ?></option>
+                    <option value="<?= (int)$t['id'] ?>"><?= e($t['panel_code'] . ' / ' . $t['test_code'] . ' — ' . $t['test_name']) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -68,12 +68,12 @@ require __DIR__ . '/../includes/header.php';
     <div class="table-scroll">
     <table>
         <thead>
-        <tr><th>Test</th><th>Sex</th><th>Age</th><th>Min</th><th>Max</th><th>Crit low</th><th>Crit high</th></tr>
+        <tr><th>Panel / Test</th><th>Sex</th><th>Age</th><th>Min</th><th>Max</th><th>Crit low</th><th>Crit high</th></tr>
         </thead>
         <tbody>
         <?php foreach ($ranges as $r): ?>
             <tr>
-                <td><?= e($r['test_code']) ?></td>
+                <td><?= e($r['panel_code'] . ' / ' . $r['test_code']) ?></td>
                 <td><?= e($r['sex']) ?></td>
                 <td><?= (int)$r['age_min'] ?>–<?= (int)$r['age_max'] ?></td>
                 <td><?= e((string)$r['min_value']) ?></td>

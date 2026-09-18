@@ -28,11 +28,11 @@ if (!in_array($result['status'], ['approved', 'reported', 'released'], true)) {
 }
 
 $values = db()->prepare(
-    'SELECT rv.*, lt.test_code, lt.test_name, lt.unit
+    'SELECT rv.*, lt.test_code, lt.test_name, lt.unit, lt.is_numeric
      FROM result_values rv
      JOIN lab_tests lt ON lt.id = rv.lab_test_id
      WHERE rv.lab_result_id = ?
-     ORDER BY lt.test_code'
+     ORDER BY lt.sort_order, lt.test_code'
 );
 $values->execute([$id]);
 $valueRows = $values->fetchAll();
@@ -61,10 +61,15 @@ require __DIR__ . '/../includes/header.php';
         <thead><tr><th>Test</th><th>Result</th><th>Unit</th><th>Flag</th></tr></thead>
         <tbody>
         <?php foreach ($valueRows as $v): ?>
+            <?php
+            $reportValue = ((int) ($v['is_numeric'] ?? 1) === 1)
+                ? (string) ($v['numeric_value'] ?? '—')
+                : (string) ($v['text_value'] ?? $v['numeric_value'] ?? '—');
+            ?>
             <tr>
                 <td><?= e($v['test_name'] . ' (' . $v['test_code'] . ')') ?></td>
-                <td><?= e((string) $v['numeric_value']) ?></td>
-                <td><?= e($v['unit']) ?></td>
+                <td><?= e($reportValue) ?></td>
+                <td><?= e($v['unit'] ?: '—') ?></td>
                 <td>
                     <?php if ($v['is_critical']): ?>Critical<?php elseif ($v['is_out_of_range']): ?>Abnormal<?php else: ?>Normal<?php endif; ?>
                 </td>

@@ -4,7 +4,21 @@ require_once __DIR__ . '/../includes/bootstrap.php';
 require_permission('requests');
 
 $patients = db()->query('SELECT id, patient_code, first_name, last_name FROM patients ORDER BY last_name')->fetchAll();
-$tests = db()->query('SELECT * FROM lab_tests WHERE is_active = 1 ORDER BY panel_code, test_code')->fetchAll();
+$tests = db()->query('SELECT * FROM lab_tests WHERE is_active = 1 ORDER BY panel_code, sort_order, test_code')->fetchAll();
+$testsByPanel = [];
+foreach ($tests as $t) {
+    $testsByPanel[$t['panel_code']][] = $t;
+}
+$panelLabels = [
+    'CBC' => 'CBC',
+    'CHEMISTRY' => 'Chemistry (blood)',
+    'URINE' => 'Urinalysis / Urine',
+];
+$urineSections = [
+    'Physical Examination' => ['COLOR', 'APPEARANCE', 'SG', 'PH'],
+    'Chemical Examination' => ['PRO', 'GLU', 'KET', 'BLD', 'BIL', 'UBG', 'NIT', 'LEU'],
+    'Microscopic Examination' => ['RBC', 'WBC', 'EC', 'BAC', 'CAST', 'CRYS', 'YST'],
+];
 $preselect = (int) ($_GET['patient_id'] ?? 0);
 $errors = [];
 
@@ -108,18 +122,50 @@ require __DIR__ . '/../includes/header.php';
         </div>
         <div class="form-row">
             <label>Tests / analytes</label>
-            <div class="grid grid-3">
-                <?php
-                $posted = array_map('intval', $_POST['tests'] ?? []);
-                foreach ($tests as $t):
-                ?>
-                    <label style="color:var(--ink)">
-                        <input type="checkbox" name="tests[]" value="<?= (int) $t['id'] ?>"
-                            <?= in_array((int)$t['id'], $posted, true) ? 'checked' : '' ?>>
-                        <?= e($t['panel_code'] . ' / ' . $t['test_code'] . ' — ' . $t['test_name']) ?>
-                    </label>
-                <?php endforeach; ?>
-            </div>
+            <?php
+            $posted = array_map('intval', $_POST['tests'] ?? []);
+            foreach ($testsByPanel as $panel => $panelTests):
+                $title = $panelLabels[$panel] ?? $panel;
+            ?>
+                <div style="margin-top:0.85rem">
+                    <strong style="display:block;margin-bottom:0.45rem"><?= e($title) ?></strong>
+                    <?php if ($panel === 'URINE'): ?>
+                        <?php
+                        $byCode = [];
+                        foreach ($panelTests as $t) {
+                            $byCode[$t['test_code']] = $t;
+                        }
+                        foreach ($urineSections as $section => $codes):
+                        ?>
+                            <p class="muted" style="margin:0.55rem 0 0.3rem"><?= e($section) ?></p>
+                            <div class="grid grid-3">
+                                <?php foreach ($codes as $code):
+                                    if (!isset($byCode[$code])) {
+                                        continue;
+                                    }
+                                    $t = $byCode[$code];
+                                ?>
+                                    <label style="color:var(--ink)">
+                                        <input type="checkbox" name="tests[]" value="<?= (int) $t['id'] ?>"
+                                            <?= in_array((int)$t['id'], $posted, true) ? 'checked' : '' ?>>
+                                        <?= e($t['panel_code'] . ' / ' . $t['test_code'] . ' — ' . $t['test_name']) ?>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="grid grid-3">
+                            <?php foreach ($panelTests as $t): ?>
+                                <label style="color:var(--ink)">
+                                    <input type="checkbox" name="tests[]" value="<?= (int) $t['id'] ?>"
+                                        <?= in_array((int)$t['id'], $posted, true) ? 'checked' : '' ?>>
+                                    <?= e($t['panel_code'] . ' / ' . $t['test_code'] . ' — ' . $t['test_name']) ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
         </div>
         <div class="actions">
             <button class="btn" type="submit">Create request</button>

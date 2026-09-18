@@ -25,13 +25,13 @@ lab_tests ──< reference_ranges
 |-------|---------|
 | `users` | Auth, roles (`manager`, `med_tech`, `staff`) |
 | `patients` | Patient demographics |
-| `lab_tests` | Catalog of tests/analytes |
+| `lab_tests` | Catalog of tests/analytes (unique per `panel_code` + `test_code`; panels: CBC, CHEMISTRY, URINE) |
 | `reference_ranges` | Rule-based min/max by test, sex, age |
 | `lab_requests` | Laboratory request header |
 | `request_tests` | Tests ordered on a request |
 | `specimens` | Specimen tracking + status |
 | `lab_results` | Result header + workflow status |
-| `result_values` | Per-analyte encoded values |
+| `result_values` | Per-analyte encoded values (`numeric_value` and/or `text_value`) |
 | `ai_flags` | Isolation Forest scores/warnings |
 | `audit_logs` | Immutable activity trail |
 | `backups` | Backup run history |

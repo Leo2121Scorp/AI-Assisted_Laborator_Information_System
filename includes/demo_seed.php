@@ -26,12 +26,12 @@ function seed_demo_lab_cases(PDO $pdo): array
     }
 
     $tests = $pdo->query('SELECT id, test_code, panel_code FROM lab_tests WHERE is_active = 1')->fetchAll(PDO::FETCH_ASSOC);
-    $byCode = [];
+    $byPanelCode = [];
     $byPanel = [];
     foreach ($tests as $t) {
         $code = (string) $t['test_code'];
         $panel = (string) $t['panel_code'];
-        $byCode[$code] = (int) $t['id'];
+        $byPanelCode[$panel][$code] = (int) $t['id'];
         $byPanel[$panel][] = (int) $t['id'];
     }
     if (empty($byPanel['CBC'])) {
@@ -174,12 +174,13 @@ function seed_demo_lab_cases(PDO $pdo): array
             );
 
             foreach ($case['values'] as $code => $num) {
-                if (!isset($byCode[$code])) {
+                $tid = $byPanelCode[$panel][$code] ?? null;
+                if ($tid === null) {
                     continue;
                 }
                 $oor = $case['ai'] ? 1 : 0;
                 $crit = ($code === 'PLT' && $num < 50) || ($code === 'WBC' && $num > 25) ? 1 : 0;
-                $insVal->execute([$resultId, $byCode[$code], $num, $oor, $crit]);
+                $insVal->execute([$resultId, $tid, $num, $oor, $crit]);
             }
 
             if ($case['ai']) {

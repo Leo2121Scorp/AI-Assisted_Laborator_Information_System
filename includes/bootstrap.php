@@ -259,8 +259,19 @@ function patient_age(string $birthDate): int
 
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/audit.php';
+require_once __DIR__ . '/catalog.php';
 require_once __DIR__ . '/validation.php';
 require_once __DIR__ . '/ai_client.php';
 require_once __DIR__ . '/workflow.php';
 require_once __DIR__ . '/guides.php';
 require_once __DIR__ . '/demo_seed.php';
+
+// One-time (or rare) catalog migration for existing deployments that predate URINE.
+try {
+    $urineCount = (int) db()->query("SELECT COUNT(*) FROM lab_tests WHERE panel_code = 'URINE'")->fetchColumn();
+    if ($urineCount < 19) {
+        ensure_lab_test_catalog();
+    }
+} catch (Throwable $e) {
+    // Schema may not exist yet during first install — ignore.
+}
