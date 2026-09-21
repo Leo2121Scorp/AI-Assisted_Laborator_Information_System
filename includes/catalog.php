@@ -95,6 +95,19 @@ function lab_test_catalog_rows(): array
         ['CAST', 'Casts', 'URINE', '/LPF', 0, 170],
         ['CRYS', 'Crystals', 'URINE', null, 0, 180],
         ['YST', 'Yeast', 'URINE', null, 0, 190],
+        // STOOL — fecalysis (qualitative)
+        ['COLOR', 'Stool Color', 'STOOL', null, 0, 10],
+        ['CONS', 'Stool Consistency', 'STOOL', null, 0, 20],
+        ['MUC', 'Mucus', 'STOOL', null, 0, 30],
+        ['BLOOD', 'Visible Blood', 'STOOL', null, 0, 40],
+        ['RBC', 'Red Blood Cell', 'STOOL', null, 0, 50],
+        ['WBC', 'White Blood Cell', 'STOOL', null, 0, 60],
+        ['OVA', 'Parasite Ova', 'STOOL', null, 0, 70],
+        ['CYST', 'Protozoan Cyst', 'STOOL', null, 0, 80],
+        ['TROPH', 'Protozoan Trophozoite', 'STOOL', null, 0, 90],
+        ['YEAST', 'Yeast', 'STOOL', null, 0, 100],
+        ['FAT', 'Fat Globules', 'STOOL', null, 0, 110],
+        ['FOB', 'Fecal Occult Blood', 'STOOL', null, 0, 120],
     ];
 }
 

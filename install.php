@@ -141,7 +141,7 @@ try {
     require_once __DIR__ . '/includes/catalog.php';
     try {
         ensure_lab_test_catalog($pdo);
-        $messages[] = 'Lab test catalog ready (CBC / CHEMISTRY / URINE).';
+        $messages[] = 'Lab test catalog ready (CBC / CHEMISTRY / URINE / STOOL).';
     } catch (Throwable $e) {
         $messages[] = 'Catalog refresh warning: ' . $e->getMessage();
     }

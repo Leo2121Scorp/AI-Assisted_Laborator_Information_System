@@ -69,7 +69,7 @@ try {
         require_once __DIR__ . '/../includes/catalog.php';
         try {
             ensure_lab_test_catalog($pdo);
-            fwrite(STDOUT, "auto_install: lab test catalog refreshed (CBC / CHEMISTRY / URINE).\n");
+            fwrite(STDOUT, "auto_install: lab test catalog refreshed (CBC / CHEMISTRY / URINE / STOOL).\n");
         } catch (Throwable $e) {
             fwrite(STDERR, 'auto_install: catalog refresh warning: ' . $e->getMessage() . "\n");
         }

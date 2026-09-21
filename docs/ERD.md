@@ -25,7 +25,7 @@ lab_tests ──< reference_ranges
 |-------|---------|
 | `users` | Auth, roles (`manager`, `med_tech`, `staff`) |
 | `patients` | Patient demographics |
-| `lab_tests` | Catalog of tests/analytes (unique per `panel_code` + `test_code`; panels: CBC, CHEMISTRY, URINE) |
+| `lab_tests` | Catalog of tests/analytes (unique per `panel_code` + `test_code`; panels: CBC, CHEMISTRY, URINE, STOOL) |
 | `reference_ranges` | Rule-based min/max by test, sex, age |
 | `lab_requests` | Laboratory request header |
 | `request_tests` | Tests ordered on a request |

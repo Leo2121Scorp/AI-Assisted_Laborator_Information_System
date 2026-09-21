@@ -13,11 +13,17 @@ $panelLabels = [
     'CBC' => 'CBC',
     'CHEMISTRY' => 'Chemistry (blood)',
     'URINE' => 'Urinalysis / Urine',
+    'STOOL' => 'Fecalysis / Stool',
 ];
 $urineSections = [
     'Physical Examination' => ['COLOR', 'APPEARANCE', 'SG', 'PH'],
     'Chemical Examination' => ['PRO', 'GLU', 'KET', 'BLD', 'BIL', 'UBG', 'NIT', 'LEU'],
     'Microscopic Examination' => ['RBC', 'WBC', 'EC', 'BAC', 'CAST', 'CRYS', 'YST'],
+];
+$stoolSections = [
+    'Gross Examination' => ['COLOR', 'CONS', 'MUC', 'BLOOD'],
+    'Microscopic Examination' => ['RBC', 'WBC', 'OVA', 'CYST', 'TROPH', 'YEAST', 'FAT'],
+    'Chemical Examination' => ['FOB'],
 ];
 $preselect = (int) ($_GET['patient_id'] ?? 0);
 $errors = [];
@@ -129,13 +135,14 @@ require __DIR__ . '/../includes/header.php';
             ?>
                 <div style="margin-top:0.85rem">
                     <strong style="display:block;margin-bottom:0.45rem"><?= e($title) ?></strong>
-                    <?php if ($panel === 'URINE'): ?>
+                    <?php if ($panel === 'URINE' || $panel === 'STOOL'): ?>
                         <?php
                         $byCode = [];
                         foreach ($panelTests as $t) {
                             $byCode[$t['test_code']] = $t;
                         }
-                        foreach ($urineSections as $section => $codes):
+                        $sections = $panel === 'URINE' ? $urineSections : $stoolSections;
+                        foreach ($sections as $section => $codes):
                         ?>
                             <p class="muted" style="margin:0.55rem 0 0.3rem"><?= e($section) ?></p>
                             <div class="grid grid-3">

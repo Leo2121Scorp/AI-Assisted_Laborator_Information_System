@@ -48,6 +48,22 @@ INSERT INTO lab_tests (test_code, test_name, panel_code, unit, is_numeric, sort_
 ('YST', 'Yeast', 'URINE', NULL, 0, 190)
 ON CONFLICT (panel_code, test_code) DO NOTHING;
 
+-- FECALYSIS / STOOL
+INSERT INTO lab_tests (test_code, test_name, panel_code, unit, is_numeric, sort_order) VALUES
+('COLOR', 'Stool Color', 'STOOL', NULL, 0, 10),
+('CONS', 'Stool Consistency', 'STOOL', NULL, 0, 20),
+('MUC', 'Mucus', 'STOOL', NULL, 0, 30),
+('BLOOD', 'Visible Blood', 'STOOL', NULL, 0, 40),
+('RBC', 'Red Blood Cell', 'STOOL', NULL, 0, 50),
+('WBC', 'White Blood Cell', 'STOOL', NULL, 0, 60),
+('OVA', 'Parasite Ova', 'STOOL', NULL, 0, 70),
+('CYST', 'Protozoan Cyst', 'STOOL', NULL, 0, 80),
+('TROPH', 'Protozoan Trophozoite', 'STOOL', NULL, 0, 90),
+('YEAST', 'Yeast', 'STOOL', NULL, 0, 100),
+('FAT', 'Fat Globules', 'STOOL', NULL, 0, 110),
+('FOB', 'Fecal Occult Blood', 'STOOL', NULL, 0, 120)
+ON CONFLICT (panel_code, test_code) DO NOTHING;
+
 INSERT INTO reference_ranges (lab_test_id, sex, age_min, age_max, min_value, max_value, critical_low, critical_high)
 SELECT id, 'A', 18, 150, 4.0, 11.0, 2.0, 30.0 FROM lab_tests WHERE panel_code='CBC' AND test_code='WBC'
 AND NOT EXISTS (SELECT 1 FROM reference_ranges rr JOIN lab_tests t ON t.id = rr.lab_test_id WHERE t.panel_code='CBC' AND t.test_code='WBC' AND rr.sex='A' AND rr.age_min=18);

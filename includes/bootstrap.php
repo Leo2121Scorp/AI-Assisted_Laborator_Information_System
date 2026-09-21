@@ -266,10 +266,11 @@ require_once __DIR__ . '/workflow.php';
 require_once __DIR__ . '/guides.php';
 require_once __DIR__ . '/demo_seed.php';
 
-// One-time (or rare) catalog migration for existing deployments that predate URINE.
+// One-time (or rare) catalog migration for existing deployments that predate URINE/STOOL.
 try {
     $urineCount = (int) db()->query("SELECT COUNT(*) FROM lab_tests WHERE panel_code = 'URINE'")->fetchColumn();
-    if ($urineCount < 19) {
+    $stoolCount = (int) db()->query("SELECT COUNT(*) FROM lab_tests WHERE panel_code = 'STOOL'")->fetchColumn();
+    if ($urineCount < 19 || $stoolCount < 12) {
         ensure_lab_test_catalog();
     }
 } catch (Throwable $e) {

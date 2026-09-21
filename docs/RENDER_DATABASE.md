@@ -6,7 +6,7 @@ This LIS stores **laboratory results** in Postgres on Render (or MySQL on local 
 
 | Table | What it holds |
 |-------|----------------|
-| `lab_results` | One row per panel (CBC, CHEMISTRY, URINE, …) and workflow status |
+| `lab_results` | One row per panel (CBC, CHEMISTRY, URINE, STOOL, …) and workflow status |
 | `result_values` | Values per test (numeric and qualitative text) |
 | `ai_flags` | Isolation Forest score / warning text |
 | `specimens` | Sample status that should be processed before encoding |
@@ -63,7 +63,7 @@ After deploy, the container runs `scripts/auto_install.php`, which creates schem
 Sign in as `medtech` or `manager` (`password123` on a fresh install).
 
 1. **Patients** → Register (or pick an existing patient).
-2. **Requests → New request** → choose tests (CBC / Chemistry / Urine). Save.
+2. **Requests → New request** → choose tests (CBC / Chemistry / Urine / Stool). Save.
 3. **Specimens** → mark collected → processing → completed (MedTech).
 4. Dashboard **Results** (or **Encode pending**) → open the panel → enter values → **Save, validate & run AI**.
 5. If AI warns, review, then **Approve**.

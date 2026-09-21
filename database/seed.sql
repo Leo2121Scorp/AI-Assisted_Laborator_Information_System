@@ -48,6 +48,21 @@ INSERT INTO lab_tests (test_code, test_name, panel_code, unit, is_numeric, sort_
 ('CRYS', 'Crystals', 'URINE', NULL, 0, 180),
 ('YST', 'Yeast', 'URINE', NULL, 0, 190);
 
+-- FECALYSIS / STOOL
+INSERT INTO lab_tests (test_code, test_name, panel_code, unit, is_numeric, sort_order) VALUES
+('COLOR', 'Stool Color', 'STOOL', NULL, 0, 10),
+('CONS', 'Stool Consistency', 'STOOL', NULL, 0, 20),
+('MUC', 'Mucus', 'STOOL', NULL, 0, 30),
+('BLOOD', 'Visible Blood', 'STOOL', NULL, 0, 40),
+('RBC', 'Red Blood Cell', 'STOOL', NULL, 0, 50),
+('WBC', 'White Blood Cell', 'STOOL', NULL, 0, 60),
+('OVA', 'Parasite Ova', 'STOOL', NULL, 0, 70),
+('CYST', 'Protozoan Cyst', 'STOOL', NULL, 0, 80),
+('TROPH', 'Protozoan Trophozoite', 'STOOL', NULL, 0, 90),
+('YEAST', 'Yeast', 'STOOL', NULL, 0, 100),
+('FAT', 'Fat Globules', 'STOOL', NULL, 0, 110),
+('FOB', 'Fecal Occult Blood', 'STOOL', NULL, 0, 120);
+
 -- CBC ranges (adult, both sexes as A where similar; sex-specific for HGB/HCT/RBC)
 INSERT INTO reference_ranges (lab_test_id, sex, age_min, age_max, min_value, max_value, critical_low, critical_high) VALUES
 ((SELECT id FROM lab_tests WHERE panel_code='CBC' AND test_code='WBC'), 'A', 18, 150, 4.0, 11.0, 2.0, 30.0),
