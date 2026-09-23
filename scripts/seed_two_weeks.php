@@ -443,29 +443,112 @@ function clinic_seed_code(string $prefix, string $day): string
     return $prefix . $ymd . strtoupper(bin2hex(random_bytes(3)));
 }
 
+/**
+ * Point existing patients at Magalang: about 85% in town, the rest in neighboring towns.
+ *
+ * @return array{ok:bool,updated:int,message:string}
+ */
+function clinic_seed_apply_magalang_addresses(PDO $pdo): array
+{
+    $driver = (string) $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+    $existing = $pdo->query(
+        "SELECT setting_value FROM system_settings WHERE setting_key = 'patient_address_area'"
+    )->fetchColumn();
+    if ($existing === 'magalang-85') {
+        return ['ok' => true, 'updated' => 0, 'message' => 'Patient addresses already sit around Magalang, Pampanga.'];
+    }
+
+    $ids = $pdo->query('SELECT id FROM patients ORDER BY created_at, id')->fetchAll(PDO::FETCH_COLUMN);
+    $total = count($ids);
+    if ($total === 0) {
+        return ['ok' => true, 'updated' => 0, 'message' => 'No patients to update.'];
+    }
+
+    $nearbyCount = (int) round($total * 0.15);
+    $nearby = [];
+    if ($nearbyCount > 0) {
+        $step = $total / $nearbyCount;
+        for ($i = 0; $i < $nearbyCount; $i++) {
+            $nearby[(int) floor(($i + 0.5) * $step)] = true;
+        }
+    }
+
+    $update = $pdo->prepare('UPDATE patients SET address = ? WHERE id = ?');
+    $magalang = 0;
+    $near = 0;
+    foreach ($ids as $index => $id) {
+        $isNearby = isset($nearby[$index]);
+        $update->execute([clinic_seed_local_address((int) $index, $isNearby), (int) $id]);
+        if ($isNearby) {
+            $near++;
+        } else {
+            $magalang++;
+        }
+    }
+
+    $stamp = '2026-09-14 08:30:00';
+    if ($driver === 'pgsql') {
+        $pdo->prepare(
+            'INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES (?, ?, ?)
+             ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = EXCLUDED.updated_at'
+        )->execute(['patient_address_area', 'magalang-85', $stamp]);
+    } else {
+        $pdo->prepare(
+            'INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES (?, ?, ?)
+             ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = VALUES(updated_at)'
+        )->execute(['patient_address_area', 'magalang-85', $stamp]);
+    }
+
+    return [
+        'ok' => true,
+        'updated' => $total,
+        'message' => "Updated {$total} addresses: {$magalang} in Magalang, {$near} in nearby towns.",
+    ];
+}
+
+/** A home address in Magalang, or in a town beside it when $nearby is true. */
+function clinic_seed_local_address(int $slot, bool $nearby): string
+{
+    $house = 8 + (($slot * 37) % 210);
+    if ($nearby) {
+        $near = [
+            '%d MacArthur Highway, Barangay Dau, Mabalacat, Pampanga',
+            '%d Balibago Road, Barangay Balibago, Angeles City, Pampanga',
+            '%d Camba Road, Barangay Camba, Arayat, Pampanga',
+            '%d Pandacaqui Road, Barangay San Carlos, Mexico, Pampanga',
+            '%d Manila North Road, Barangay Pio, Porac, Pampanga',
+            '%d Mabiga Road, Barangay Mabiga, Mabalacat, Pampanga',
+            '%d Plaridel Street, Barangay Santo Cristo, Angeles City, Pampanga',
+            '%d San Jose Malino Road, Mexico, Pampanga',
+            '%d Manibaug Road, Barangay Manibaug Paralaya, Porac, Pampanga',
+            '%d Poblacion Road, Arayat, Pampanga',
+        ];
+        return sprintf($near[$slot % count($near)], $house);
+    }
+
+    $barangays = [
+        'San Nicolas 1', 'San Pedro 1', 'San Francisco', 'Santa Cruz', 'Santo Rosario',
+        'San Agustin', 'San Antonio', 'San Isidro', 'San Miguel', 'San Pablo',
+        'San Vicente', 'Dolores', 'La Paz', 'San Roque', 'Ayala',
+        'Camias', 'Escaler', 'San Jose', 'Santa Lucia', 'Turu',
+        'San Ildefonso', 'San Pedro 2', 'Navaling', 'Bucanan', 'San Rafael',
+    ];
+    $streets = [
+        'Sto. Rosario Street', 'San Nicolas Road', 'Don Luis Panlilio Street',
+        'Magalang-Arayat Road', 'A. Consunji Street', 'J.P. Rizal Street',
+        'Mabini Street', 'Bonifacio Street', 'San Pablo Road', 'Lacson Street',
+    ];
+    $barangay = $barangays[$slot % count($barangays)];
+    $street = $streets[($slot * 3) % count($streets)];
+    return "{$house} {$street}, Barangay {$barangay}, Magalang, Pampanga";
+}
+
 /** @return array{code:string,first:string,last:string,middle:string,sex:string,birth:string,contact:string,address:string,age:int} */
 function clinic_seed_patient(string $day): array
 {
     $male = ['Juan', 'Jose', 'Mark', 'Angelo', 'Carlo', 'Miguel', 'Rafael', 'Gabriel', 'Antonio', 'Pedro', 'Ramon', 'Luis', 'Christian', 'Daniel', 'Joshua', 'Emmanuel', 'Francis', 'Jerome', 'Eduardo', 'Fernando', 'Ricardo', 'Mario', 'Ryan', 'Kevin', 'Patrick', 'Adrian', 'Jayson', 'Roberto', 'Marco', 'Paolo', 'Lorenzo', 'Mateo', 'Diego', 'Joaquin', 'Andres', 'Noel', 'Allan', 'Dennis'];
     $female = ['Maria', 'Ana', 'Rosa', 'Grace', 'Joy', 'Michelle', 'Angela', 'Patricia', 'Catherine', 'Jennifer', 'Christine', 'Jessica', 'Nicole', 'Andrea', 'Bianca', 'Camille', 'Denise', 'Elaine', 'Gloria', 'Hannah', 'Irene', 'Jasmine', 'Karen', 'Liza', 'Maricel', 'Nina', 'Olivia', 'Rochelle', 'Sarah', 'Teresa', 'Angelica', 'Clarissa', 'Diana', 'Elena', 'Fatima', 'Hazel', 'Isabel', 'Katrina', 'Lourdes', 'Sofia', 'Carmela', 'Rowena', 'Princess', 'Thea', 'Josie', 'Marites'];
     $surnames = ['Santos', 'Reyes', 'Cruz', 'Bautista', 'Garcia', 'Mendoza', 'Gonzales', 'Torres', 'Flores', 'Rivera', 'Ramos', 'Castillo', 'Aquino', 'Villanueva', 'Fernandez', 'Dela Cruz', 'Navarro', 'Domingo', 'Pascual', 'Gutierrez', 'Hernandez', 'Lopez', 'Morales', 'Castro', 'Romero', 'Aguilar', 'Salazar', 'Mercado', 'Ocampo', 'De Leon', 'Santiago', 'Velasco', 'Corpuz', 'Manalo', 'Padilla', 'Soriano', 'Valdez', 'Tolentino', 'Evangelista', 'De Guzman', 'Lagman', 'Bernardo', 'Chua', 'Tan', 'Lim', 'Ong', 'Yap'];
-    $places = [
-        '12 Mabini St, Barangay San Roque, Malolos, Bulacan',
-        '45 Rizal Ave, Barangay Poblacion, Meycauayan, Bulacan',
-        '88 J.P. Rizal, Barangay Muzon, San Jose del Monte, Bulacan',
-        '7 Burgos St, Barangay Caniogan, Calumpit, Bulacan',
-        '23 Luna St, Barangay Sta. Cruz, Guiguinto, Bulacan',
-        '56 Bonifacio St, Barangay Tikay, Malolos, Bulacan',
-        '101 Quirino Highway, Barangay Graceville, San Jose del Monte',
-        '14 Del Pilar, Barangay Bagbaguin, Meycauayan, Bulacan',
-        '9 Aguinaldo St, Barangay Longos, Malolos, Bulacan',
-        '33 National Road, Barangay Tabang, Guiguinto, Bulacan',
-        '18 Sampaguita St, Barangay Fatima, San Jose del Monte',
-        '77 MacArthur Highway, Barangay Ibayo, Marilao, Bulacan',
-        '5 Jacinto St, Barangay Balasing, Santa Maria, Bulacan',
-        '61 Mabolo St, Barangay Caypombo, Santa Maria, Bulacan',
-        '28 Real St, Barangay Poblacion, Pulilan, Bulacan',
-    ];
 
     $sex = random_int(0, 1) === 0 ? 'M' : 'F';
     $first = $sex === 'M' ? $male[random_int(0, count($male) - 1)] : $female[random_int(0, count($female) - 1)];
@@ -500,7 +583,7 @@ function clinic_seed_patient(string $day): array
         'sex' => $sex,
         'birth' => $birth->format('Y-m-d'),
         'contact' => '09' . (string) random_int(100000000, 999999999),
-        'address' => $places[random_int(0, count($places) - 1)],
+        'address' => clinic_seed_local_address(random_int(0, 999), random_int(1, 100) > 85),
         'age' => $age,
     ];
 }
