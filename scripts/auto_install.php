@@ -76,7 +76,10 @@ try {
         require_once __DIR__ . '/../includes/demo_seed.php';
         $demo = seed_demo_lab_cases($pdo);
         fwrite(STDOUT, 'auto_install: already initialized; ' . $demo['message'] . "\n");
-        exit(0);
+        require_once __DIR__ . '/seed_two_weeks.php';
+        $twoWeek = seed_two_week_clinic_data($pdo);
+        fwrite(STDOUT, 'auto_install: ' . $twoWeek['message'] . "\n");
+        exit($twoWeek['ok'] ? 0 : 1);
     }
 
     exec_sql_file($pdo, $schema);
@@ -104,7 +107,10 @@ try {
     require_once __DIR__ . '/../includes/demo_seed.php';
     $demo = seed_demo_lab_cases($pdo);
     fwrite(STDOUT, "auto_install: schema + demo users ready; " . $demo['message'] . "\n");
-    exit(0);
+    require_once __DIR__ . '/seed_two_weeks.php';
+    $twoWeek = seed_two_week_clinic_data($pdo);
+    fwrite(STDOUT, 'auto_install: ' . $twoWeek['message'] . "\n");
+    exit($twoWeek['ok'] ? 0 : 1);
 } catch (Throwable $e) {
     fwrite(STDERR, 'auto_install failed: ' . $e->getMessage() . "\n");
     exit(1);
