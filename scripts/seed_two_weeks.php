@@ -2,8 +2,8 @@
 /**
  * Two weeks of clinic visits for the live database.
  *
- * Weekdays 1–14 September 2026, closed Saturday and Sunday.
- * Every timestamp is a real clock time between 06:00 and 20:30 (Asia/Manila).
+ * Exactly 32 patients on weekdays 1–14 September 2026. Saturday and Sunday are off.
+ * Every timestamp is a clock time between 06:00 and 08:30.
  * Safe to run more than once: a settings row stops a second load.
  */
 declare(strict_types=1);
@@ -24,8 +24,8 @@ function seed_two_week_clinic_data(PDO $pdo): array
         $existing = $pdo->query(
             "SELECT setting_value FROM system_settings WHERE setting_key = 'clinic_seed_sep2026'"
         )->fetchColumn();
-        if ($existing === 'done') {
-            return ['ok' => true, 'created' => 0, 'message' => 'September clinic seed already loaded.'];
+        if ($existing === '32-morning') {
+            return ['ok' => true, 'created' => 0, 'message' => '32-patient September clinic seed already loaded.'];
         }
 
         $users = $pdo->query('SELECT id, username, role FROM users WHERE is_active = 1 ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
@@ -80,6 +80,18 @@ function seed_two_week_clinic_data(PDO $pdo): array
         };
 
         $pdo->beginTransaction();
+        foreach ([
+            'DELETE FROM ai_flags',
+            'DELETE FROM result_values',
+            'DELETE FROM lab_results',
+            'DELETE FROM request_tests',
+            'DELETE FROM specimens',
+            'DELETE FROM lab_requests',
+            'DELETE FROM patients',
+            'DELETE FROM audit_logs',
+        ] as $wipeSql) {
+            $pdo->exec($wipeSql);
+        }
 
         $insTest = $pdo->prepare('INSERT INTO request_tests (lab_request_id, lab_test_id) VALUES (?, ?)');
         $insValue = $pdo->prepare(
@@ -94,12 +106,13 @@ function seed_two_week_clinic_data(PDO $pdo): array
                    VALUES (?, ?, ?, ?, ?, ?, ?)'
         );
 
-        foreach ($days as $day) {
-            $audits[] = clinic_seed_audit($staffId, 'login', 'user', $staffId, 'User logged in', '192.168.1.21', clinic_seed_stamp($day, random_int(361, 368), random_int(5, 40)));
-            $audits[] = clinic_seed_audit($techId, 'login', 'user', $techId, 'User logged in', '192.168.1.34', clinic_seed_stamp($day, random_int(366, 374), random_int(5, 40)));
-            $audits[] = clinic_seed_audit($managerId, 'login', 'user', $managerId, 'User logged in', '192.168.1.10', clinic_seed_stamp($day, random_int(370, 378), random_int(5, 40)));
+        $dayCounts = [4, 3, 3, 4, 2, 3, 4, 3, 3, 3];
+        foreach ($days as $dayIndex => $day) {
+            $audits[] = clinic_seed_audit($staffId, 'login', 'user', $staffId, 'User logged in', '192.168.1.21', clinic_seed_stamp($day, random_int(361, 364), random_int(0, 59)));
+            $audits[] = clinic_seed_audit($techId, 'login', 'user', $techId, 'User logged in', '192.168.1.34', clinic_seed_stamp($day, random_int(363, 366), random_int(0, 59)));
+            $audits[] = clinic_seed_audit($managerId, 'login', 'user', $managerId, 'User logged in', '192.168.1.10', clinic_seed_stamp($day, random_int(365, 367), random_int(0, 59)));
 
-            $visits = random_int(6, 9);
+            $visits = $dayCounts[$dayIndex] ?? 3;
             $arrivals = clinic_seed_arrivals($visits);
             foreach ($arrivals as $arrival) {
                 $patient = clinic_seed_patient($day);
@@ -141,10 +154,10 @@ function seed_two_week_clinic_data(PDO $pdo): array
                     continue;
                 }
 
-                $reqAt = $arrival + random_int(2, 7);
-                $collectAt = $reqAt + random_int(5, 14);
-                $processAt = $collectAt + random_int(10, 24);
-                $encodeAt = $processAt + random_int(12, 36);
+                $reqAt = $arrival + random_int(1, 3);
+                $collectAt = $reqAt + random_int(4, 9);
+                $processAt = $collectAt + random_int(6, 12);
+                $encodeAt = $processAt + random_int(8, 16);
                 $clock = clinic_seed_fit($arrival, [
                     'req' => $reqAt,
                     'collect' => $collectAt,
@@ -155,9 +168,9 @@ function seed_two_week_clinic_data(PDO $pdo): array
                 $collectAt = $clock['collect'];
                 $processAt = $clock['process'];
                 $encodeAt = $clock['encode'];
-                $reqStamp = clinic_seed_stamp($day, $reqAt, 12);
-                $collectStamp = clinic_seed_stamp($day, $collectAt, 18);
-                $processStamp = clinic_seed_stamp($day, $processAt, 24);
+                $reqStamp = clinic_seed_stamp($day, $reqAt, random_int(0, 59));
+                $collectStamp = clinic_seed_stamp($day, $collectAt, random_int(0, 59));
+                $processStamp = clinic_seed_stamp($day, $processAt, random_int(0, 59));
                 $reqCode = clinic_seed_code('RQ', $day);
                 $requestId = $insert(
                     'INSERT INTO lab_requests (request_code, patient_id, requesting_physician, clinical_notes, status, created_by, created_at, updated_at)
@@ -202,20 +215,20 @@ function seed_two_week_clinic_data(PDO $pdo): array
                 $firstEncodeStamp = clinic_seed_stamp($day, $encodeAt, 50);
                 $panelIndex = 0;
                 foreach ($panelTests as $panel => $rows) {
-                    $panelClock = clinic_seed_fit($encodeAt + ($panelIndex * 8), [
-                        'encode' => $encodeAt + ($panelIndex * 8),
-                        'approve' => $encodeAt + ($panelIndex * 8) + random_int(6, 12),
-                        'report' => $encodeAt + ($panelIndex * 8) + random_int(14, 22),
-                        'release' => $encodeAt + ($panelIndex * 8) + random_int(24, 34),
+                    $panelClock = clinic_seed_fit($encodeAt + ($panelIndex * 4), [
+                        'encode' => $encodeAt + ($panelIndex * 4),
+                        'approve' => $encodeAt + ($panelIndex * 4) + random_int(3, 7),
+                        'report' => $encodeAt + ($panelIndex * 4) + random_int(8, 12),
+                        'release' => $encodeAt + ($panelIndex * 4) + random_int(13, 18),
                     ]);
                     $panelIndex++;
-                    $encodeStamp = clinic_seed_stamp($day, $panelClock['encode'], 10);
+                    $encodeStamp = clinic_seed_stamp($day, $panelClock['encode'], random_int(0, 59));
                     if ($panelIndex === 1) {
                         $firstEncodeStamp = $encodeStamp;
                     }
-                    $approveStamp = clinic_seed_stamp($day, $panelClock['approve'], 20);
-                    $reportStamp = clinic_seed_stamp($day, $panelClock['report'], 30);
-                    $releaseStamp = clinic_seed_stamp($day, $panelClock['release'], 40);
+                    $approveStamp = clinic_seed_stamp($day, $panelClock['approve'], random_int(0, 59));
+                    $reportStamp = clinic_seed_stamp($day, $panelClock['report'], random_int(0, 59));
+                    $releaseStamp = clinic_seed_stamp($day, $panelClock['release'], random_int(0, 59));
                     $lastReleaseStamp = $releaseStamp;
 
                     $built = clinic_seed_values($panel, $rows, $ranges, $patient['sex'], $patient['age']);
@@ -299,9 +312,9 @@ function seed_two_week_clinic_data(PDO $pdo): array
                 $created++;
             }
 
-            $audits[] = clinic_seed_audit($staffId, 'logout', 'user', $staffId, 'User logged out', '192.168.1.21', clinic_seed_stamp($day, 20 * 60 + 22, random_int(5, 40)));
-            $audits[] = clinic_seed_audit($techId, 'logout', 'user', $techId, 'User logged out', '192.168.1.34', clinic_seed_stamp($day, 20 * 60 + 25, random_int(5, 40)));
-            $audits[] = clinic_seed_audit($managerId, 'logout', 'user', $managerId, 'User logged out', '192.168.1.10', clinic_seed_stamp($day, 20 * 60 + 29, random_int(5, 40)));
+            $audits[] = clinic_seed_audit($staffId, 'logout', 'user', $staffId, 'User logged out', '192.168.1.21', clinic_seed_stamp($day, 8 * 60 + 26, random_int(0, 59)));
+            $audits[] = clinic_seed_audit($techId, 'logout', 'user', $techId, 'User logged out', '192.168.1.34', clinic_seed_stamp($day, 8 * 60 + 28, random_int(0, 59)));
+            $audits[] = clinic_seed_audit($managerId, 'logout', 'user', $managerId, 'User logged out', '192.168.1.10', clinic_seed_stamp($day, 8 * 60 + 29, random_int(0, 59)));
         }
 
         usort($audits, static fn(array $a, array $b): int => [$a['at'], $a['action']] <=> [$b['at'], $b['action']]);
@@ -324,7 +337,7 @@ function seed_two_week_clinic_data(PDO $pdo): array
         $pdo->prepare(
             'INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES (?, ?, ?)
              ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = EXCLUDED.updated_at'
-        )->execute(['clinic_seed_sep2026', 'done', '2026-09-14 20:30:00']);
+        )->execute(['clinic_seed_sep2026', '32-morning', '2026-09-14 08:30:00']);
 
         $pdo->commit();
     } catch (Throwable $e) {
@@ -341,7 +354,7 @@ function seed_two_week_clinic_data(PDO $pdo): array
     return [
         'ok' => true,
         'created' => $created,
-        'message' => "Loaded {$created} weekday visits from 1–14 September 2026 (closed Sat/Sun, 06:00–20:30).",
+        'message' => "Loaded {$created} weekday patients from 1–14 September 2026 (closed Sat/Sun, 06:00–08:30).",
     ];
 }
 
@@ -364,22 +377,36 @@ function clinic_seed_working_days(): array
 /** @return list<int> minutes from midnight */
 function clinic_seed_arrivals(int $count): array
 {
-    $start = 6 * 60 + 20;
-    $end = 17 * 60 + 30;
+    $start = 6 * 60 + 12;
+    $end = 7 * 60 + 25;
+    if ($count <= 1) {
+        return [$start + random_int(0, 15)];
+    }
     $span = $end - $start;
     $times = [];
     for ($i = 0; $i < $count; $i++) {
-        $slot = $start + (int) round((($i + 0.5) * $span) / $count);
-        $times[] = max($start, min($end, $slot + random_int(-10, 10)));
+        $slot = $start + (int) round(($i * $span) / ($count - 1));
+        $times[] = $slot + random_int(-3, 4);
     }
     sort($times);
+    $previous = $start - 8;
+    foreach ($times as $index => $minute) {
+        if ($minute < $previous + 8) {
+            $minute = $previous + 8;
+        }
+        if ($minute > $end) {
+            $minute = $end;
+        }
+        $times[$index] = $minute;
+        $previous = $minute;
+    }
     return $times;
 }
 
 /** @param array<string,int> $minutes @return array<string,int> */
 function clinic_seed_fit(int $floor, array $minutes): array
 {
-    $limit = 20 * 60 + 18;
+    $limit = 8 * 60 + 22;
     $max = max($minutes);
     if ($max > $limit) {
         $shift = $max - $limit;
@@ -403,7 +430,7 @@ function clinic_seed_fit(int $floor, array $minutes): array
 
 function clinic_seed_stamp(string $day, int $minute, int $second = 0): string
 {
-    $minute = max(6 * 60, min(20 * 60 + 30, $minute));
+    $minute = max(6 * 60, min(8 * 60 + 30, $minute));
     $second = max(0, min(59, $second));
     $hour = intdiv($minute, 60);
     $min = $minute % 60;

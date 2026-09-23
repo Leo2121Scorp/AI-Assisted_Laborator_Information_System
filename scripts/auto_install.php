@@ -73,12 +73,15 @@ try {
         } catch (Throwable $e) {
             fwrite(STDERR, 'auto_install: catalog refresh warning: ' . $e->getMessage() . "\n");
         }
-        require_once __DIR__ . '/../includes/demo_seed.php';
-        $demo = seed_demo_lab_cases($pdo);
-        fwrite(STDOUT, 'auto_install: already initialized; ' . $demo['message'] . "\n");
         require_once __DIR__ . '/seed_two_weeks.php';
         $twoWeek = seed_two_week_clinic_data($pdo);
         fwrite(STDOUT, 'auto_install: ' . $twoWeek['message'] . "\n");
+        $clinicFlag = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'clinic_seed_sep2026'")->fetchColumn();
+        if ($clinicFlag !== '32-morning') {
+            require_once __DIR__ . '/../includes/demo_seed.php';
+            $demo = seed_demo_lab_cases($pdo);
+            fwrite(STDOUT, 'auto_install: already initialized; ' . $demo['message'] . "\n");
+        }
         exit($twoWeek['ok'] ? 0 : 1);
     }
 
