@@ -1,8 +1,22 @@
 <?php
 declare(strict_types=1);
+
+/**
+ * Single result detail — encode values, review warnings, approve / reject / release.
+ *
+ * This is the main “workbench” for a lab result:
+ *  1. Enter analyte values (encode)
+ *  2. Rule checks + optional AI anomaly flag run on save
+ *  3. MedTech approves or rejects
+ *  4. Generate report, then release to clinic/patient
+ *
+ * Permission: encode_results (approve/release buttons still check their own can() flags).
+ */
+
 require_once __DIR__ . '/../includes/bootstrap.php';
 require_permission('encode_results');
 
+// --- Load the result + patient context ---
 $id = (int) ($_GET['id'] ?? 0);
 $stmt = db()->prepare(
     "SELECT r.*, lr.request_code, lr.id AS request_id, p.sex, p.birth_date,
@@ -19,7 +33,7 @@ if (!$result) {
     redirect('results/index.php');
 }
 
-// Tests for this panel on this request
+// Tests ordered for this panel on this request (what the encode form shows)
 $testsStmt = db()->prepare(
     'SELECT lt.* FROM request_tests rt
      JOIN lab_tests lt ON lt.id = rt.lab_test_id
@@ -29,6 +43,7 @@ $testsStmt = db()->prepare(
 $testsStmt->execute([$result['lab_request_id'], $result['panel_code']]);
 $tests = $testsStmt->fetchAll();
 
+// Map existing values by lab_test_id so the form can pre-fill inputs
 $valuesStmt = db()->prepare('SELECT * FROM result_values WHERE lab_result_id = ?');
 $valuesStmt->execute([$id]);
 $existing = [];
@@ -36,13 +51,16 @@ foreach ($valuesStmt->fetchAll() as $v) {
     $existing[(int) $v['lab_test_id']] = $v;
 }
 
+// Latest AI flag row (Isolation Forest score / message), if any
 $aiStmt = db()->prepare('SELECT * FROM ai_flags WHERE lab_result_id = ? ORDER BY id DESC LIMIT 1');
 $aiStmt->execute([$id]);
 $aiFlag = $aiStmt->fetch() ?: null;
 
+// --- Handle workflow actions from the forms below ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     if ($action === 'encode') {
+        // Save values, run reference-range rules, then AI check
         $inputs = $_POST['values'] ?? [];
         $out = encode_and_validate_result($id, $inputs);
         if ($out['ok']) {
@@ -62,6 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('results/view.php?id=' . $id);
     }
     if ($action === 'reject') {
+        // Rejection needs a reason so staff know what to fix on re-encode
         $reason = trim($_POST['rejection_reason'] ?? '');
         if ($reason === '') {
             flash('error', 'Rejection reason is required.');
@@ -86,6 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Only early statuses allow editing values; after approval the form is read-only
 $editable = in_array($result['status'], ['pending', 'encoded', 'validated'], true);
 $pageTitle = 'Result ' . $result['result_code'];
 require __DIR__ . '/../includes/header.php';
@@ -130,6 +150,7 @@ require __DIR__ . '/../includes/header.php';
             <?php foreach ($tests as $t): ?>
                 <?php
                 $ex = $existing[(int)$t['id']] ?? null;
+                // Qualitative tests (is_numeric=0) store text like "Neg" / "Trace"
                 $isNumeric = (int) ($t['is_numeric'] ?? 1) === 1;
                 $displayValue = $isNumeric
                     ? (string) ($ex['numeric_value'] ?? '')
@@ -142,7 +163,7 @@ require __DIR__ . '/../includes/header.php';
                         <?php if ($editable): ?>
                             <input name="values[<?= (int)$t['id'] ?>]"
                                    value="<?= e($displayValue) ?>"
-                                   <?= $isNumeric ? 'inputmode="decimal"' : 'placeholder="e.g. Neg, Trace, 1+"' ?>>
+                                   <?= $isNumeric ? 'inputmode="decimal"' : 'placeholder="e.g. Yellow, Negative, 4-6 / hpf"' ?>>
                         <?php else: ?>
                             <?= e($displayValue !== '' ? $displayValue : '—') ?>
                         <?php endif; ?>

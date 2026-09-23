@@ -1,33 +1,71 @@
 <?php
+/**
+ * requests/create.php — Create a new laboratory request
+ *
+ * What this page does:
+ * Lets you pick a patient, physician, specimen type, notes, and one or more tests.
+ * On save it creates: a lab_request, linked tests, one specimen, and pending result
+ * rows (one per test panel). Then redirects to the request view page.
+ *
+ * POST vs GET:
+ * - GET  = show the form. Optional ?patient_id=... pre-selects that patient.
+ * - POST = validate and insert everything in one database transaction.
+ *
+ * Transaction tip: beginTransaction + commit means all inserts succeed together,
+ * or rollBack undoes them if something fails mid-way.
+ */
 declare(strict_types=1);
+
 require_once __DIR__ . '/../includes/bootstrap.php';
 require_permission('requests');
 
+// ---------------------------------------------------------------------------
+// Load dropdown data from the database (patients + active lab tests)
+// ---------------------------------------------------------------------------
 $patients = db()->query('SELECT id, patient_code, first_name, last_name FROM patients ORDER BY last_name')->fetchAll();
 $tests = db()->query('SELECT * FROM lab_tests WHERE is_active = 1 ORDER BY panel_code, sort_order, test_code')->fetchAll();
+
+// Group tests by panel code so the HTML can show CBC / Chemistry / Urine / Stool sections
 $testsByPanel = [];
 foreach ($tests as $t) {
     $testsByPanel[$t['panel_code']][] = $t;
 }
 $panelLabels = [
-    'CBC' => 'CBC',
+    'CBC' => 'Hematology / CBC',
     'CHEMISTRY' => 'Chemistry (blood)',
-    'URINE' => 'Urinalysis / Urine',
-    'STOOL' => 'Fecalysis / Stool',
+    'URINE' => 'Urinalysis',
+    'STOOL' => 'Fecalysis',
+];
+// Group checkboxes the same way the printed result sheets are laid out
+$cbcSections = [
+    'Hematology' => ['HGB', 'HCT', 'RBC', 'WBC', 'PLT'],
+    'Differential count' => ['SEG', 'LYM', 'MON', 'EOS'],
+    'Red cell indices' => ['MCV', 'MCH', 'MCHC'],
 ];
 $urineSections = [
-    'Physical Examination' => ['COLOR', 'APPEARANCE', 'SG', 'PH'],
-    'Chemical Examination' => ['PRO', 'GLU', 'KET', 'BLD', 'BIL', 'UBG', 'NIT', 'LEU'],
-    'Microscopic Examination' => ['RBC', 'WBC', 'EC', 'BAC', 'CAST', 'CRYS', 'YST'],
+    'Physical Examination' => ['COLOR', 'APPEARANCE', 'PH', 'SG'],
+    'Chemical Examination' => ['GLU', 'PRO', 'KET', 'BLD', 'BIL', 'UBG', 'NIT', 'LEU'],
+    'Microscopic Examination' => ['WBC', 'RBC', 'MTHR', 'AUR', 'EC', 'BAC', 'CAST', 'CRYS', 'YST'],
 ];
 $stoolSections = [
-    'Gross Examination' => ['COLOR', 'CONS', 'MUC', 'BLOOD'],
-    'Microscopic Examination' => ['RBC', 'WBC', 'OVA', 'CYST', 'TROPH', 'YEAST', 'FAT'],
-    'Chemical Examination' => ['FOB'],
+    'Physical Examination' => ['COLOR', 'CONS'],
+    'Microscopic Examination' => ['WBC', 'RBC', 'BAC'],
+    'Parasite result' => ['PARA'],
+    'Other stool exams' => ['MUC', 'BLOOD', 'OVA', 'CYST', 'TROPH', 'YEAST', 'FAT', 'FOB'],
 ];
+$panelSections = [
+    'CBC' => $cbcSections,
+    'URINE' => $urineSections,
+    'STOOL' => $stoolSections,
+];
+
+// Optional pre-select from patient view page: create.php?patient_id=12
 $preselect = (int) ($_GET['patient_id'] ?? 0);
 $errors = [];
 
+// ---------------------------------------------------------------------------
+// Form handling — POST creates request + tests + specimen + result shells
+// ---------------------------------------------------------------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $patientId = (int) ($_POST['patient_id'] ?? 0);
     $physician = trim($_POST['requesting_physician'] ?? '');
@@ -46,6 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo = db();
         $pdo->beginTransaction();
         try {
+            // 1) Main request row
             $reqCode = generate_code('RQ');
             $requestId = db_insert(
                 'INSERT INTO lab_requests (request_code, patient_id, requesting_physician, clinical_notes, status, created_by)
@@ -57,6 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new RuntimeException('Could not read new request id (Postgres RETURNING).');
             }
 
+            // 2) Link each selected test; remember which panels were chosen
             $insTest = $pdo->prepare('INSERT INTO request_tests (lab_request_id, lab_test_id) VALUES (?, ?)');
             $panelCodes = [];
             foreach ($selected as $testId) {
@@ -67,6 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
+            // 3) One specimen to track the sample for this request
             $specCode = generate_code('SP');
             $specimenId = db_insert(
                 'INSERT INTO specimens (specimen_code, lab_request_id, specimen_type, status, updated_by)
@@ -78,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new RuntimeException('Could not read new specimen id.');
             }
 
-            // One result record per panel
+            // 4) One pending result record per panel (e.g. CBC, CHEMISTRY)
             foreach (array_keys($panelCodes) as $panel) {
                 $resCode = generate_code('RS');
                 db_insert(
@@ -100,6 +141,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// ---------------------------------------------------------------------------
+// HTML display — create form
+// ---------------------------------------------------------------------------
 $pageTitle = 'New Laboratory Request — AI-LIS';
 require __DIR__ . '/../includes/header.php';
 ?>
@@ -129,19 +173,35 @@ require __DIR__ . '/../includes/header.php';
         <div class="form-row">
             <label>Tests / analytes</label>
             <?php
+            // Remember checked boxes after a failed POST so the user does not re-tick everything
             $posted = array_map('intval', $_POST['tests'] ?? []);
             foreach ($testsByPanel as $panel => $panelTests):
                 $title = $panelLabels[$panel] ?? $panel;
             ?>
                 <div style="margin-top:0.85rem">
                     <strong style="display:block;margin-bottom:0.45rem"><?= e($title) ?></strong>
-                    <?php if ($panel === 'URINE' || $panel === 'STOOL'): ?>
+                    <?php if (isset($panelSections[$panel])): ?>
                         <?php
                         $byCode = [];
                         foreach ($panelTests as $t) {
                             $byCode[$t['test_code']] = $t;
                         }
-                        $sections = $panel === 'URINE' ? $urineSections : $stoolSections;
+                        $sections = $panelSections[$panel];
+                        $listed = [];
+                        foreach ($sections as $codes) {
+                            foreach ($codes as $code) {
+                                $listed[$code] = true;
+                            }
+                        }
+                        $leftover = [];
+                        foreach ($byCode as $code => $unused) {
+                            if (!isset($listed[$code])) {
+                                $leftover[] = $code;
+                            }
+                        }
+                        if ($leftover) {
+                            $sections['Other'] = $leftover;
+                        }
                         foreach ($sections as $section => $codes):
                         ?>
                             <p class="muted" style="margin:0.55rem 0 0.3rem"><?= e($section) ?></p>
