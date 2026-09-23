@@ -77,7 +77,7 @@ HTTP 400 for bad input; 503 if model not loaded; 500 for unexpected errors. PHP 
 
 ## Groq chat (`POST /chat`)
 
-Manager / MedTech assistant powered by [Groq](https://console.groq.com/). Requires `GROQ_API_KEY` (OS env or `config/env.php`). Default model: `llama-3.3-70b-versatile`.
+Manager / MedTech assistant powered by [Groq](https://console.groq.com/). Requires `GROQ_API_KEY` (OS env or `config/env.php`). Default model: `openai/gpt-oss-120b`.
 
 Request:
 
@@ -98,7 +98,7 @@ Response:
 {
   "ok": true,
   "reply": "…",
-  "model": "llama-3.3-70b-versatile"
+  "model": "openai/gpt-oss-120b"
 }
 ```
 
