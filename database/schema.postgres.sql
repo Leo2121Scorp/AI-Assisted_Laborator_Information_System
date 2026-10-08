@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
   username VARCHAR(50) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   full_name VARCHAR(120) NOT NULL,
-  role VARCHAR(20) NOT NULL CHECK (role IN ('manager', 'med_tech', 'staff')),
+  role VARCHAR(20) NOT NULL CHECK (role IN ('manager', 'med_tech', 'staff', 'patient')),
   is_active SMALLINT NOT NULL DEFAULT 1,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL
@@ -23,9 +23,11 @@ CREATE TABLE IF NOT EXISTS patients (
   contact_number VARCHAR(30) NULL,
   address VARCHAR(255) NULL,
   created_by INT NULL REFERENCES users(id) ON DELETE SET NULL,
+  user_id INT NULL REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL
 );
+CREATE UNIQUE INDEX IF NOT EXISTS uq_patients_user ON patients (user_id);
 
 CREATE TABLE IF NOT EXISTS lab_tests (
   id SERIAL PRIMARY KEY,
@@ -159,3 +161,24 @@ CREATE TABLE IF NOT EXISTS system_settings (
   setting_value VARCHAR(255) NOT NULL,
   updated_at TIMESTAMP NULL
 );
+
+CREATE TABLE IF NOT EXISTS appointments (
+  id SERIAL PRIMARY KEY,
+  appointment_code VARCHAR(30) NOT NULL UNIQUE,
+  patient_id INT NOT NULL REFERENCES patients(id),
+  preferred_at TIMESTAMP NOT NULL,
+  scheduled_at TIMESTAMP NULL,
+  checkup_reason VARCHAR(255) NOT NULL,
+  panel_codes VARCHAR(255) NULL,
+  notes TEXT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending','approved','arrived','expired','cancelled')),
+  approved_by INT NULL REFERENCES users(id) ON DELETE SET NULL,
+  approved_at TIMESTAMP NULL,
+  arrived_at TIMESTAMP NULL,
+  lab_request_id INT NULL REFERENCES lab_requests(id) ON DELETE SET NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL
+);
+CREATE INDEX IF NOT EXISTS idx_appt_patient ON appointments (patient_id);
+CREATE INDEX IF NOT EXISTS idx_appt_status ON appointments (status, scheduled_at);

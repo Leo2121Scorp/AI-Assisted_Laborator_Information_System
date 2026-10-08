@@ -209,7 +209,7 @@ function base_url(string $path = ''): string
     // Project lives under /AI-Assisted_Laborator_Information_System/public or project root
     $dir = str_replace('\\', '/', dirname($script));
     // If in a subdirectory (patients, results, etc.), go up to app root URL
-    if (preg_match('#/(patients|requests|specimens|results|reports|admin|audit|backup|api)$#', $dir)) {
+    if (preg_match('#/(patients|requests|specimens|results|reports|admin|audit|backup|api|portal|appointments)$#', $dir)) {
         $dir = dirname($dir);
     }
     $base = rtrim($dir, '/');
@@ -257,6 +257,12 @@ function patient_age(string $birthDate): int
     return (int) $dob->diff($now)->y;
 }
 
+/** Compare a datetime expression as a calendar date on MySQL or Postgres. */
+function sql_as_date(string $expression): string
+{
+    return db_driver() === 'pgsql' ? '(' . $expression . ')::date' : 'DATE(' . $expression . ')';
+}
+
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/audit.php';
 require_once __DIR__ . '/catalog.php';
@@ -265,6 +271,8 @@ require_once __DIR__ . '/ai_client.php';
 require_once __DIR__ . '/workflow.php';
 require_once __DIR__ . '/guides.php';
 require_once __DIR__ . '/demo_seed.php';
+require_once __DIR__ . '/portal_schema.php';
+require_once __DIR__ . '/appointments.php';
 
 // One-time (or rare) catalog migration for existing deployments that predate URINE/STOOL.
 try {
@@ -275,4 +283,11 @@ try {
     }
 } catch (Throwable $e) {
     // Schema may not exist yet during first install — ignore.
+}
+
+try {
+    ensure_portal_schema();
+    ensure_demo_patient();
+} catch (Throwable $e) {
+    // Tables may not exist yet during first install — ignore.
 }

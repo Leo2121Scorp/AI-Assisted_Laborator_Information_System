@@ -33,9 +33,15 @@ $navKey = current_nav_key();
     </div>
     <div class="topbar-menu" id="topbar-menu">
         <nav class="nav" id="main-nav" aria-label="Main">
+            <?php if (has_role(ROLE_PATIENT)): ?>
+                <a href="<?= e(base_url('portal/dashboard.php')) ?>"<?= nav_link_class('dashboard', $navKey) ?>>Dashboard</a>
+                <a href="<?= e(base_url('portal/book.php')) ?>"<?= nav_link_class('book', $navKey) ?>>Book checkup</a>
+                <a href="<?= e(base_url('portal/results.php')) ?>"<?= nav_link_class('my-results', $navKey) ?>>My results</a>
+            <?php else: ?>
             <a href="<?= e(base_url('dashboard.php')) ?>"<?= nav_link_class('dashboard', $navKey) ?>>Dashboard</a>
             <?php if (can('patients')): ?><a href="<?= e(base_url('patients/index.php')) ?>"<?= nav_link_class('patients', $navKey) ?>>Patients</a><?php endif; ?>
             <?php if (can('requests')): ?><a href="<?= e(base_url('requests/index.php')) ?>"<?= nav_link_class('requests', $navKey) ?>>Requests</a><?php endif; ?>
+            <?php if (can('manage_appointments')): ?><a href="<?= e(base_url('appointments/index.php')) ?>"<?= nav_link_class('appointments', $navKey) ?>>Appointments</a><?php endif; ?>
             <?php if (can('specimen_collect')): ?><a href="<?= e(base_url('specimens/index.php')) ?>"<?= nav_link_class('specimens', $navKey) ?>>Specimens</a><?php endif; ?>
             <?php if (can('encode_results')): ?><a href="<?= e(base_url('results/index.php')) ?>"<?= nav_link_class('results', $navKey) ?>>Results</a><?php endif; ?>
             <?php if (can('view_reports')): ?><a href="<?= e(base_url('reports/index.php')) ?>"<?= nav_link_class('reports', $navKey) ?>>Reports</a><?php endif; ?>
@@ -44,6 +50,7 @@ $navKey = current_nav_key();
             <?php if (can('backup')): ?><a href="<?= e(base_url('backup/index.php')) ?>"<?= nav_link_class('backup', $navKey) ?>>Backup</a><?php endif; ?>
             <?php if (can('manage_ranges')): ?><a href="<?= e(base_url('admin/ranges.php')) ?>"<?= nav_link_class('ranges', $navKey) ?>>Ranges</a><?php endif; ?>
             <?php if (can('manage_users')): ?><a href="<?= e(base_url('admin/users.php')) ?>"<?= nav_link_class('users', $navKey) ?>>Users</a><?php endif; ?>
+            <?php endif; ?>
         </nav>
         <div class="userbox">
             <button type="button" class="btn btn-small btn-ghost" id="open-guide-btn" data-guide-open title="Open role guide">Guide</button>

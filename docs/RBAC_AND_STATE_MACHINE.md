@@ -6,30 +6,33 @@ AI-Assisted Laboratory Information System — Lagman Qualicare Multispecialty an
 
 | Role code | Display name | Description |
 |-----------|--------------|-------------|
-| `manager` | Laboratory Manager | Full operational oversight, user management, backups, reference ranges, release override |
+| `manager` | Laboratory Manager / Doctor | Full operational oversight, MedTech lab work, user management, backups, reference ranges, release override |
 | `med_tech` | Medical Technologist | Specimen processing, result encoding, validation review, approve, generate/release reports |
-| `staff` | Administrative Staff | Patient registration, test requests, specimen collection logging, view reports |
+| `staff` | Administrative Staff | Patient registration, test requests, checkup approval, specimen collection logging, view reports |
+| `patient` | Patient | Own released results and checkup booking only |
 
 ### Permission matrix
 
-| Permission | manager | med_tech | staff |
-|------------|:-------:|:--------:|:-----:|
-| Login / dashboard | Y | Y | Y |
-| Manage users | Y | — | — |
-| Manage reference ranges | Y | — | — |
-| Register patients | Y | Y | Y |
-| Edit / delete patients | Y | — | — |
-| Create laboratory requests | Y | Y | Y |
-| Collect specimen / update early statuses | Y | Y | Y |
-| Update processing / completed specimen | Y | Y | — |
-| Encode results | Y | Y | — |
-| Approve results | Y | Y | — |
-| Generate / release reports | Y | Y | — |
-| View released reports | Y | Y | Y |
-| View audit logs | Y | Y | — |
-| Run database backup | Y | — | — |
-| View / control database (Render Postgres inventory) | Y | — | — |
-| View AI warnings | Y | Y | — |
+| Permission | manager | med_tech | staff | patient |
+|------------|:-------:|:--------:|:-----:|:-------:|
+| Login / dashboard | Y | Y | Y | own |
+| Manage users | Y | — | — | — |
+| Manage reference ranges | Y | — | — | — |
+| Register patients | Y | Y | Y | — |
+| Edit / delete patients | Y | — | — | — |
+| Create laboratory requests | Y | Y | Y | — |
+| Collect specimen / update early statuses | Y | Y | Y | — |
+| Update processing / completed specimen | Y | Y | — | — |
+| Encode results | Y | Y | — | — |
+| Approve results | Y | Y | — | — |
+| Generate / release reports | Y | Y | — | — |
+| View released reports | Y | Y | Y | own |
+| View audit logs | Y | Y | — | — |
+| Run database backup | Y | — | — | — |
+| View / control database (Render Postgres inventory) | Y | — | — | — |
+| View AI warnings | Y | Y | — | — |
+| Approve checkup time / mark arrived | Y | Y | Y | — |
+| Book checkup / view own released results | — | — | — | Y |
 
 ---
 

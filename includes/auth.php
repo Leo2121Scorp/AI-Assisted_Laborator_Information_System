@@ -4,6 +4,7 @@ declare(strict_types=1);
 const ROLE_MANAGER = 'manager';
 const ROLE_MED_TECH = 'med_tech';
 const ROLE_STAFF = 'staff';
+const ROLE_PATIENT = 'patient';
 
 function current_user(): ?array
 {
@@ -33,9 +34,10 @@ function role_label(?string $role = null): string
 {
     $role = $role ?? user_role();
     return match ($role) {
-        ROLE_MANAGER => 'Laboratory Manager',
+        ROLE_MANAGER => 'Laboratory Manager / Doctor',
         ROLE_MED_TECH => 'Medical Technologist',
         ROLE_STAFF => 'Administrative Staff',
+        ROLE_PATIENT => 'Patient',
         default => $role ? ucwords(str_replace('_', ' ', $role)) : 'Guest',
     };
 }
@@ -44,9 +46,10 @@ function role_short_label(?string $role = null): string
 {
     $role = $role ?? user_role();
     return match ($role) {
-        ROLE_MANAGER => 'Manager',
+        ROLE_MANAGER => 'Manager / Doctor',
         ROLE_MED_TECH => 'MedTech',
         ROLE_STAFF => 'Staff',
+        ROLE_PATIENT => 'Patient',
         default => 'User',
     };
 }
@@ -84,6 +87,18 @@ function current_nav_key(): string
     }
     if (str_contains($script, '/admin/users') || str_contains($script, '/admin/user_')) {
         return 'users';
+    }
+    if (str_contains($script, '/appointments/')) {
+        return 'appointments';
+    }
+    if (str_contains($script, '/portal/book')) {
+        return 'book';
+    }
+    if (str_contains($script, '/portal/result')) {
+        return 'my-results';
+    }
+    if (str_contains($script, '/portal/')) {
+        return 'dashboard';
     }
     if (str_ends_with($script, '/dashboard.php') || str_ends_with($script, 'dashboard.php')) {
         return 'dashboard';
@@ -134,6 +149,9 @@ function can(string $permission): bool
         'view_database' => [ROLE_MANAGER],
         'view_ai' => [ROLE_MANAGER, ROLE_MED_TECH],
         'use_ai_chat' => [ROLE_MANAGER, ROLE_MED_TECH],
+        'manage_appointments' => [ROLE_MANAGER, ROLE_MED_TECH, ROLE_STAFF],
+        'book_appointment' => [ROLE_PATIENT],
+        'view_own_results' => [ROLE_PATIENT],
     ];
     if (!isset($map[$permission])) {
         return false;
@@ -144,10 +162,49 @@ function can(string $permission): bool
 function require_permission(string $permission): void
 {
     require_login();
+    if (has_role(ROLE_PATIENT)) {
+        redirect('portal/dashboard.php');
+    }
     if (!can($permission)) {
         flash('error', 'You do not have permission for that action.');
         redirect('dashboard.php');
     }
+}
+
+/** Patient row linked to the logged-in portal account. */
+function current_patient_record(): ?array
+{
+    $user = current_user();
+    if (!$user || ($user['role'] ?? '') !== ROLE_PATIENT) {
+        return null;
+    }
+    static $loaded = false;
+    static $row = null;
+    if ($loaded) {
+        return $row;
+    }
+    $loaded = true;
+    $stmt = db()->prepare('SELECT * FROM patients WHERE user_id = ? LIMIT 1');
+    $stmt->execute([(int) $user['id']]);
+    $found = $stmt->fetch();
+    $row = $found ?: null;
+    return $row;
+}
+
+/** @return array<string,mixed> */
+function require_patient(): array
+{
+    require_login();
+    if (!has_role(ROLE_PATIENT)) {
+        flash('error', 'That page is for patient accounts.');
+        redirect('dashboard.php');
+    }
+    $patient = current_patient_record();
+    if (!$patient) {
+        flash('error', 'No patient record is linked to this login.');
+        redirect('logout.php');
+    }
+    return $patient;
 }
 
 function active_manager_count(): int
@@ -172,6 +229,7 @@ function attempt_login(string $username, string $password): bool
     if (!$user || !password_verify($password, $user['password_hash'])) {
         return false;
     }
+    session_regenerate_id(true);
     $_SESSION['user'] = [
         'id' => (int) $user['id'],
         'username' => $user['username'],

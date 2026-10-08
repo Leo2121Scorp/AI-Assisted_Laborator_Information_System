@@ -60,7 +60,24 @@ $panelSections = [
 ];
 
 // Optional pre-select from patient view page: create.php?patient_id=12
-$preselect = (int) ($_GET['patient_id'] ?? 0);
+$preselect = (int) ($_GET['patient_id'] ?? $_POST['patient_id'] ?? 0);
+$appointmentId = (int) ($_POST['appointment_id'] ?? $_GET['appointment_id'] ?? 0);
+$linkedAppointment = null;
+if ($appointmentId > 0) {
+    $apptStmt = db()->prepare('SELECT * FROM appointments WHERE id = ?');
+    $apptStmt->execute([$appointmentId]);
+    $linkedAppointment = $apptStmt->fetch() ?: null;
+    if (
+        !$linkedAppointment
+        || $linkedAppointment['status'] !== 'arrived'
+        || !empty($linkedAppointment['lab_request_id'])
+    ) {
+        $linkedAppointment = null;
+        $appointmentId = 0;
+    } elseif ($preselect <= 0) {
+        $preselect = (int) $linkedAppointment['patient_id'];
+    }
+}
 $errors = [];
 
 // ---------------------------------------------------------------------------
@@ -130,6 +147,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 );
             }
 
+            if ($appointmentId > 0) {
+                $pdo->prepare(
+                    "UPDATE appointments
+                     SET lab_request_id = ?, updated_at = CURRENT_TIMESTAMP
+                     WHERE id = ? AND patient_id = ? AND status = 'arrived' AND lab_request_id IS NULL"
+                )->execute([$requestId, $appointmentId, $patientId]);
+            }
+
             $pdo->commit();
             audit_log('request_create', 'lab_request', $requestId, "Created {$reqCode}");
             flash('success', "Request {$reqCode} created with specimen {$specCode}.");
@@ -151,6 +176,10 @@ require __DIR__ . '/../includes/header.php';
     <h1>Create Laboratory Request</h1>
     <?php foreach ($errors as $err): ?><div class="alert alert-error"><?= e($err) ?></div><?php endforeach; ?>
     <form method="post">
+        <?php if ($appointmentId > 0): ?>
+            <input type="hidden" name="appointment_id" value="<?= (int) $appointmentId ?>">
+            <p class="muted">This request is for arrived checkup <?= e($linkedAppointment['appointment_code'] ?? '') ?>.</p>
+        <?php endif; ?>
         <div class="form-row">
             <label>Patient</label>
             <select name="patient_id" required>
@@ -168,13 +197,30 @@ require __DIR__ . '/../includes/header.php';
         </div>
         <div class="form-row">
             <label>Clinical notes</label>
-            <textarea name="clinical_notes"><?= e($_POST['clinical_notes'] ?? '') ?></textarea>
+            <textarea name="clinical_notes"><?php
+                $noteDefault = $_POST['clinical_notes'] ?? '';
+                if ($noteDefault === '' && $linkedAppointment) {
+                    $noteDefault = trim(
+                        (string) $linkedAppointment['checkup_reason']
+                        . (!empty($linkedAppointment['notes']) ? "\n" . $linkedAppointment['notes'] : '')
+                    );
+                }
+                echo e($noteDefault);
+            ?></textarea>
         </div>
         <div class="form-row">
             <label>Tests / analytes</label>
             <?php
             // Remember checked boxes after a failed POST so the user does not re-tick everything
             $posted = array_map('intval', $_POST['tests'] ?? []);
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $linkedAppointment && !empty($linkedAppointment['panel_codes'])) {
+                $wanted = array_map('trim', explode(',', (string) $linkedAppointment['panel_codes']));
+                foreach ($tests as $t) {
+                    if (in_array($t['panel_code'], $wanted, true)) {
+                        $posted[] = (int) $t['id'];
+                    }
+                }
+            }
             foreach ($testsByPanel as $panel => $panelTests):
                 $title = $panelLabels[$panel] ?? $panel;
             ?>

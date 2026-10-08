@@ -18,7 +18,7 @@ CREATE TABLE users (
   username VARCHAR(50) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   full_name VARCHAR(120) NOT NULL,
-  role ENUM('manager', 'med_tech', 'staff') NOT NULL,
+  role ENUM('manager', 'med_tech', 'staff', 'patient') NOT NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
@@ -38,10 +38,14 @@ CREATE TABLE patients (
   contact_number VARCHAR(30) NULL,
   address VARCHAR(255) NULL,
   created_by INT UNSIGNED NULL,
+  user_id INT UNSIGNED NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_patients_created_by FOREIGN KEY (created_by) REFERENCES users(id)
-    ON DELETE SET NULL ON UPDATE CASCADE
+    ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT fk_patients_user FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE SET NULL ON UPDATE CASCADE,
+  UNIQUE KEY uq_patients_user (user_id)
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------------
@@ -207,4 +211,32 @@ CREATE TABLE system_settings (
   setting_key VARCHAR(80) PRIMARY KEY,
   setting_value VARCHAR(255) NOT NULL,
   updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------------
+-- Patient checkup bookings
+-- ---------------------------------------------------------------------------
+CREATE TABLE appointments (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  appointment_code VARCHAR(30) NOT NULL UNIQUE,
+  patient_id INT UNSIGNED NOT NULL,
+  preferred_at DATETIME NOT NULL,
+  scheduled_at DATETIME NULL,
+  checkup_reason VARCHAR(255) NOT NULL,
+  panel_codes VARCHAR(255) NULL,
+  notes TEXT NULL,
+  status ENUM('pending','approved','arrived','expired','cancelled') NOT NULL DEFAULT 'pending',
+  approved_by INT UNSIGNED NULL,
+  approved_at DATETIME NULL,
+  arrived_at DATETIME NULL,
+  lab_request_id INT UNSIGNED NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_appt_patient FOREIGN KEY (patient_id) REFERENCES patients(id),
+  CONSTRAINT fk_appt_approved_by FOREIGN KEY (approved_by) REFERENCES users(id)
+    ON DELETE SET NULL,
+  CONSTRAINT fk_appt_request FOREIGN KEY (lab_request_id) REFERENCES lab_requests(id)
+    ON DELETE SET NULL,
+  INDEX idx_appt_patient (patient_id),
+  INDEX idx_appt_status (status, scheduled_at)
 ) ENGINE=InnoDB;

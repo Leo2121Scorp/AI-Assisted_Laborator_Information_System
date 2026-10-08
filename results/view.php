@@ -127,11 +127,16 @@ require __DIR__ . '/../includes/header.php';
 </div>
 <?php endif; ?>
 
+<div class="warning-box">
+    <strong>AI note</strong>
+    <p><?= e(ai_medical_disclaimer()) ?></p>
+</div>
 <?php if ($aiFlag && ((int) $aiFlag['is_anomaly'] === 1 || (int) $result['ai_flagged'] === 1)): ?>
 <div class="warning-box">
     <strong>AI Warning (Isolation Forest)</strong>
     <p><?= e($aiFlag['warning_message'] ?: 'Anomaly flagged.') ?></p>
     <p>Score: <?= e((string) $aiFlag['score']) ?> | Model: <?= e($aiFlag['model_version'] ?: '—') ?></p>
+    <p><?= e(ai_medical_disclaimer()) ?></p>
 </div>
 <?php endif; ?>
 

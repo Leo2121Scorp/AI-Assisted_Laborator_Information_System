@@ -138,6 +138,15 @@ try {
     $ins->execute(['staff', $hash, 'Administrative Staff', 'staff']);
     $messages[] = 'Demo users ready (password: password123).';
 
+    require_once __DIR__ . '/includes/portal_schema.php';
+    try {
+        ensure_portal_schema($pdo);
+        ensure_demo_patient($pdo);
+        $messages[] = 'Patient portal ready (demo login: patient / password123).';
+    } catch (Throwable $e) {
+        $messages[] = 'Patient portal warning: ' . $e->getMessage();
+    }
+
     require_once __DIR__ . '/includes/catalog.php';
     try {
         ensure_lab_test_catalog($pdo);

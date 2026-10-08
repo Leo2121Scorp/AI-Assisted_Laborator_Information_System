@@ -43,7 +43,8 @@ $guideStorageKey = 'ailis_guide_seen_' . (user_role() ?? 'guest');
                             $nodes = match ($demo) {
                                 'staff-path' => ['Patient', 'Request', 'Collect', 'Report'],
                                 'medtech-path' => ['Process', 'Encode', 'AI review', 'Approve', 'Release'],
-                                'manager-path' => ['Dashboard', 'Results', 'Database', 'Backup'],
+                                'manager-path' => ['Results', 'Review', 'Appointments', 'Users'],
+                                'portal-path' => ['Book', 'Approved', 'Arrive', 'Result'],
                                 'dashboard-watch' => ['Delays', 'Review', 'AI flags', 'Actions'],
                                 default => ['Start', 'Work', 'Done'],
                             };
@@ -106,7 +107,7 @@ $guideStorageKey = 'ailis_guide_seen_' . (user_role() ?? 'guest');
                             <div class="demo-users">
                                 <div class="demo-user-row" style="--i:0"><span>staff</span><em>Administrative Staff</em></div>
                                 <div class="demo-user-row" style="--i:1"><span>medtech</span><em>Medical Technologist</em></div>
-                                <div class="demo-user-row" style="--i:2"><span>manager</span><em>Laboratory Manager</em></div>
+                                <div class="demo-user-row" style="--i:2"><span>manager</span><em>Laboratory Manager / Doctor</em></div>
                             </div>
                         <?php elseif ($demo === 'manage-ranges'): ?>
                             <div class="demo-ranges">
@@ -158,6 +159,7 @@ $guideStorageKey = 'ailis_guide_seen_' . (user_role() ?? 'guest');
             </div>
             <button type="button" class="ai-chat-close" id="ai-chat-close" aria-label="Close assistant">&times;</button>
         </header>
+        <p class="ai-chat-note"><?= e(ai_medical_disclaimer()) ?></p>
         <div class="ai-chat-messages" id="ai-chat-messages">
             <div class="ai-chat-bubble ai-chat-bot">Hi — I can help with workflow, AI warnings, ranges, and lab ops. Ask a question.</div>
         </div>

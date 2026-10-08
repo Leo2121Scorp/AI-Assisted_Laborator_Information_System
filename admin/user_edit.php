@@ -94,9 +94,9 @@ require __DIR__ . '/../includes/header.php';
             <div>
                 <label>Role</label>
                 <select name="role" required>
-                    <option value="manager" <?= $values['role'] === 'manager' ? 'selected' : '' ?>>manager</option>
-                    <option value="med_tech" <?= $values['role'] === 'med_tech' ? 'selected' : '' ?>>med_tech</option>
-                    <option value="staff" <?= $values['role'] === 'staff' ? 'selected' : '' ?>>staff</option>
+                    <option value="manager" <?= $values['role'] === 'manager' ? 'selected' : '' ?>>Laboratory Manager / Doctor</option>
+                    <option value="med_tech" <?= $values['role'] === 'med_tech' ? 'selected' : '' ?>>Medical Technologist</option>
+                    <option value="staff" <?= $values['role'] === 'staff' ? 'selected' : '' ?>>Administrative Staff</option>
                 </select>
             </div>
         </div>

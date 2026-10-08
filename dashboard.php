@@ -2,6 +2,9 @@
 declare(strict_types=1);
 require_once __DIR__ . '/includes/bootstrap.php';
 require_login();
+if (has_role(ROLE_PATIENT)) {
+    redirect('portal/dashboard.php');
+}
 
 $pageTitle = 'Dashboard — AI-LIS';
 $pdo = db();
@@ -41,6 +44,7 @@ $quickActions = match ($role) {
     ROLE_STAFF => [
         ['label' => 'Register patient', 'href' => 'patients/create.php', 'primary' => true],
         ['label' => 'New request', 'href' => 'requests/create.php', 'primary' => false],
+        ['label' => 'Appointments', 'href' => 'appointments/index.php?status=pending', 'primary' => false],
         ['label' => 'Collect specimens', 'href' => 'specimens/index.php?status=pending', 'primary' => false],
         ['label' => 'Find reports', 'href' => 'reports/index.php', 'primary' => false],
     ],
@@ -48,12 +52,15 @@ $quickActions = match ($role) {
         ['label' => 'Results', 'href' => 'results/index.php', 'primary' => true],
         ['label' => 'Review results', 'href' => 'results/index.php?status=validated', 'primary' => false],
         ['label' => 'Encode pending', 'href' => 'results/index.php?status=pending', 'primary' => false],
+        ['label' => 'Appointments', 'href' => 'appointments/index.php?status=pending', 'primary' => false],
         ['label' => 'Process specimens', 'href' => 'specimens/index.php?status=collected', 'primary' => false],
         ['label' => 'Warnings', 'href' => 'results/index.php?ai=1', 'primary' => false],
     ],
     ROLE_MANAGER => [
         ['label' => 'Results', 'href' => 'results/index.php', 'primary' => true],
-        ['label' => 'Awaiting review', 'href' => 'results/index.php?status=validated', 'primary' => false],
+        ['label' => 'Review results', 'href' => 'results/index.php?status=validated', 'primary' => false],
+        ['label' => 'Encode pending', 'href' => 'results/index.php?status=pending', 'primary' => false],
+        ['label' => 'Appointments', 'href' => 'appointments/index.php', 'primary' => false],
         ['label' => 'Manage users', 'href' => 'admin/users.php', 'primary' => false],
         ['label' => 'Database', 'href' => 'admin/database.php', 'primary' => false],
         ['label' => 'Run backup', 'href' => 'backup/index.php', 'primary' => false],
@@ -64,9 +71,9 @@ $quickActions = match ($role) {
 };
 
 $workflowHint = match ($role) {
-    ROLE_STAFF => 'Your flow: Patient → Request → Collect specimen → Look up report.',
+    ROLE_STAFF => 'Your flow: Patient → Appointment or request → Collect specimen → Look up report.',
     ROLE_MED_TECH => 'Your flow: Process specimen → Encode → Review AI → Approve → Release.',
-    ROLE_MANAGER => 'Your focus: results, delays, pending review, users, the Render database, and backups.',
+    ROLE_MANAGER => 'Your focus: the same MedTech lab work (encode, review, approve, release) plus doctor oversight — appointments, users, the database, and backups.',
     default => 'Use the Guide button anytime for a step-by-step walkthrough.',
 };
 
@@ -93,6 +100,7 @@ require __DIR__ . '/includes/header.php';
                 <?php endif; ?>
             <?php endif; ?>
         </p>
+        <p class="ai-disclaimer"><?= e(ai_medical_disclaimer()) ?></p>
     </div>
     <div class="dashboard-hero-actions">
         <button type="button" class="btn btn-small" data-guide-open>Open <?= e(role_short_label()) ?> guide</button>

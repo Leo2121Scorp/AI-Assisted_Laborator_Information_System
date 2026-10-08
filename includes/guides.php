@@ -27,6 +27,12 @@ function guide_for_role(?string $role = null): array
                     'cta' => ['label' => 'Go to Patients', 'href' => 'patients/index.php'],
                 ],
                 [
+                    'title' => 'Approve checkup times',
+                    'body' => 'Patients book a checkup from their own account. Open Appointments, set the approved time, and mark Arrived when they come in. If they do not arrive within 10 minutes of that time, the booking expires and they must book again.',
+                    'demo' => 'request-create',
+                    'cta' => ['label' => 'Open Appointments', 'href' => 'appointments/index.php'],
+                ],
+                [
                     'title' => 'Create a lab request',
                     'body' => 'From the patient record (or Requests → New request), pick the patient, physician, specimen type, and ordered tests. The system creates a specimen and pending result slots automatically.',
                     'demo' => 'request-create',
@@ -70,7 +76,7 @@ function guide_for_role(?string $role = null): array
                 ],
                 [
                     'title' => 'Review AI & approve',
-                    'body' => 'After validation, Isolation Forest may mark ai_flagged. This is a soft warning only — never auto-approve. Use the Ask AI chat (Groq) for review tips, then Approve or Reject back for re-entry.',
+                    'body' => 'After validation, Isolation Forest may mark ai_flagged. This is a soft warning only — never auto-approve. AI is not suitable for describing a medical result. Seek the advice of a doctor. Use the Ask AI chat for review tips, then Approve or Reject back for re-entry.',
                     'demo' => 'ai-review',
                 ],
                 [
@@ -83,12 +89,12 @@ function guide_for_role(?string $role = null): array
         ],
         ROLE_MANAGER => [
             'id' => 'manager',
-            'title' => 'Manager quick-start guide',
-            'subtitle' => 'Oversee operations, results, the Render database, users, ranges, and backups.',
+            'title' => 'Manager / Doctor quick-start guide',
+            'subtitle' => 'Do the MedTech laboratory work, then oversee appointments, users, ranges, and backups.',
             'steps' => [
                 [
-                    'title' => 'Full oversight',
-                    'body' => 'Managers can do everything MedTech and Staff can, plus Users, Reference Ranges, Backup, and Audit. Only managers can edit or delete patient records. Use the dashboard for delays, pending MT review, and AI warnings.',
+                    'title' => 'Doctor and MedTech work',
+                    'body' => 'The Laboratory Manager / Doctor account can encode, review AI warnings, approve, and release results — the same path as MedTech — and also manage users, ranges, backups, and the database. Only managers can edit or delete patient records.',
                     'demo' => 'manager-path',
                 ],
                 [
@@ -120,6 +126,30 @@ function guide_for_role(?string $role = null): array
                     'body' => 'Database shows live Postgres connection facts, table row counts, and recent lab_results. On Render, DATABASE_URL must point at ailab-db (Internal URL). Results persist in Postgres — not on the web container disk. Use Backup before any restore or delete.',
                     'demo' => 'backup-audit',
                     'cta' => ['label' => 'Open Database', 'href' => 'admin/database.php'],
+                ],
+            ],
+        ],
+        ROLE_PATIENT => [
+            'id' => 'patient',
+            'title' => 'Patient guide',
+            'subtitle' => 'Book a checkup and read released results for your own record.',
+            'steps' => [
+                [
+                    'title' => 'Your path',
+                    'body' => 'Book a checkup, wait for the clinic to approve a time, arrive within 10 minutes of that time, then open My results when the laboratory releases them.',
+                    'demo' => 'portal-path',
+                ],
+                [
+                    'title' => 'Book a checkup',
+                    'body' => 'Choose a reason, a preferred date and time, and the laboratory tests you want. The booking stays pending until staff approve the schedule.',
+                    'demo' => 'request-create',
+                    'cta' => ['label' => 'Book checkup', 'href' => 'portal/book.php'],
+                ],
+                [
+                    'title' => 'View results',
+                    'body' => 'Only released results are shown. AI is not suitable for describing a medical result. Seek the advice of a doctor.',
+                    'demo' => 'report-view',
+                    'cta' => ['label' => 'My results', 'href' => 'portal/results.php'],
                 ],
             ],
         ],

@@ -9,6 +9,11 @@ declare(strict_types=1);
  * If AI is down, encoding still works — we return a clear "unavailable" result instead of crashing.
  */
 
+function ai_medical_disclaimer(): string
+{
+    return 'AI is not suitable for describing a medical result. Seek the advice of a doctor.';
+}
+
 /**
  * Build a safe "AI unavailable" response so callers can keep going.
  *
@@ -440,6 +445,7 @@ function llm_chat_direct(array $payload): array
         . 'used by Laboratory Managers and Medical Technologists. Help with LIS workflow, '
         . 'Isolation Forest soft warnings (advisory only), reference ranges, and lab operations. '
         . 'Do not invent patient results or replace clinical judgment. Keep answers concise. '
+        . ai_medical_disclaimer() . ' Do not describe a diagnosis or give sick advice. '
         . 'Caller role: ' . ($payload['role'] ?? 'lab_staff') . '.';
 
     $messages = [['role' => 'system', 'content' => $system]];

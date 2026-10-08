@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect('admin/users.php');
 }
 
-$users = db()->query('SELECT id, username, full_name, role, is_active, created_at FROM users ORDER BY id')->fetchAll();
+$users = db()->query("SELECT id, username, full_name, role, is_active, created_at FROM users WHERE role <> 'patient' ORDER BY id")->fetchAll();
 $pageTitle = 'Users — AI-LIS';
 require __DIR__ . '/../includes/header.php';
 ?>
@@ -39,9 +39,9 @@ require __DIR__ . '/../includes/header.php';
         <div>
             <label>Role</label>
             <select name="role">
-                <option value="manager">manager</option>
-                <option value="med_tech">med_tech</option>
-                <option value="staff">staff</option>
+                <option value="manager">Laboratory Manager / Doctor</option>
+                <option value="med_tech">Medical Technologist</option>
+                <option value="staff">Administrative Staff</option>
             </select>
         </div>
         <div><label>Password</label><input type="password" name="password" required></div>
@@ -58,7 +58,7 @@ require __DIR__ . '/../includes/header.php';
                 <td><?= (int)$u['id'] ?></td>
                 <td><?= e($u['username']) ?></td>
                 <td><?= e($u['full_name']) ?></td>
-                <td><?= e($u['role']) ?></td>
+                <td><?= e(role_label($u['role'])) ?></td>
                 <td><?= $u['is_active'] ? 'yes' : 'no' ?></td>
                 <td><?= e($u['created_at']) ?></td>
                 <td>

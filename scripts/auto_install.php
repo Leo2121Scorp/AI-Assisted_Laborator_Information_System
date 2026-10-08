@@ -73,6 +73,13 @@ try {
         } catch (Throwable $e) {
             fwrite(STDERR, 'auto_install: catalog refresh warning: ' . $e->getMessage() . "\n");
         }
+        require_once __DIR__ . '/../includes/portal_schema.php';
+        try {
+            ensure_portal_schema($pdo);
+            fwrite(STDOUT, "auto_install: patient portal schema ready.\n");
+        } catch (Throwable $e) {
+            fwrite(STDERR, 'auto_install: portal schema warning: ' . $e->getMessage() . "\n");
+        }
         require_once __DIR__ . '/seed_two_weeks.php';
         $twoWeek = seed_two_week_clinic_data($pdo);
         fwrite(STDOUT, 'auto_install: ' . $twoWeek['message'] . "\n");
@@ -83,6 +90,12 @@ try {
             require_once __DIR__ . '/../includes/demo_seed.php';
             $demo = seed_demo_lab_cases($pdo);
             fwrite(STDOUT, 'auto_install: already initialized; ' . $demo['message'] . "\n");
+        }
+        try {
+            ensure_demo_patient($pdo);
+            fwrite(STDOUT, "auto_install: demo patient portal login ready (patient / password123).\n");
+        } catch (Throwable $e) {
+            fwrite(STDERR, 'auto_install: demo patient warning: ' . $e->getMessage() . "\n");
         }
         exit($twoWeek['ok'] ? 0 : 1);
     }
@@ -104,6 +117,13 @@ try {
     $ins->execute(['medtech', $hash, 'Medical Technologist', 'med_tech']);
     $ins->execute(['staff', $hash, 'Administrative Staff', 'staff']);
 
+    require_once __DIR__ . '/../includes/portal_schema.php';
+    try {
+        ensure_portal_schema($pdo);
+    } catch (Throwable $e) {
+        fwrite(STDERR, 'auto_install: portal schema warning: ' . $e->getMessage() . "\n");
+    }
+
     $backupDir = __DIR__ . '/../backups';
     if (!is_dir($backupDir)) {
         mkdir($backupDir, 0775, true);
@@ -117,6 +137,12 @@ try {
     fwrite(STDOUT, 'auto_install: ' . $twoWeek['message'] . "\n");
     $addresses = clinic_seed_apply_magalang_addresses($pdo);
     fwrite(STDOUT, 'auto_install: ' . $addresses['message'] . "\n");
+    try {
+        ensure_demo_patient($pdo);
+        fwrite(STDOUT, "auto_install: demo patient portal login ready (patient / password123).\n");
+    } catch (Throwable $e) {
+        fwrite(STDERR, 'auto_install: demo patient warning: ' . $e->getMessage() . "\n");
+    }
     exit($twoWeek['ok'] ? 0 : 1);
 } catch (Throwable $e) {
     fwrite(STDERR, 'auto_install failed: ' . $e->getMessage() . "\n");

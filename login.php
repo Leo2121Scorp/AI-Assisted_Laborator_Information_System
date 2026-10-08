@@ -49,10 +49,15 @@ $pageTitle = 'Login — AI-LIS';
             <button class="btn" type="submit">Log In</button>
         </form>
         <p class="login-demo">
+            <a href="<?= e(base_url('portal/register.php')) ?>">Create a patient account</a>
+            to view results and book a checkup.
+        </p>
+        <p class="login-demo">
             Demo logins (password <code>password123</code>):<br>
             <strong>staff</strong> — front desk<br>
             <strong>medtech</strong> — lab bench<br>
-            <strong>manager</strong> — oversight
+            <strong>manager</strong> — Laboratory Manager / Doctor<br>
+            <strong>patient</strong> — view results and book a checkup
         </p>
     </div>
 </div>

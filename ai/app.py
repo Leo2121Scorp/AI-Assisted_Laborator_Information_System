@@ -113,6 +113,8 @@ Rules:
 - If unsure, say so and recommend verifying in the LIS screens or with a supervisor.
 - Keep answers concise and practical for busy lab staff.
 - You are not a substitute for a licensed clinician's diagnosis.
+- AI is not suitable for describing a medical result. Seek the advice of a doctor.
+- Do not describe a diagnosis or give treatment advice.
 """
 
 app = Flask(__name__)

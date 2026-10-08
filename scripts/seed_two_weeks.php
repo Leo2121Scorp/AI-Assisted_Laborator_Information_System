@@ -32,7 +32,7 @@ function seed_two_week_clinic_data(PDO $pdo): array
         $byRole = ['staff' => null, 'med_tech' => null, 'manager' => null];
         foreach ($users as $user) {
             $role = (string) $user['role'];
-            if ($byRole[$role] === null) {
+            if (array_key_exists($role, $byRole) && $byRole[$role] === null) {
                 $byRole[$role] = (int) $user['id'];
             }
         }
@@ -81,6 +81,7 @@ function seed_two_week_clinic_data(PDO $pdo): array
 
         $pdo->beginTransaction();
         foreach ([
+            'DELETE FROM appointments',
             'DELETE FROM ai_flags',
             'DELETE FROM result_values',
             'DELETE FROM lab_results',
