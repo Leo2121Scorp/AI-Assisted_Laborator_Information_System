@@ -23,8 +23,8 @@ function db(): PDO
     // Hosted deploy without DATABASE_URL must not try XAMPP localhost
     if (!empty($cfg['hosted']) && ($cfg['host'] === '127.0.0.1' || $cfg['host'] === 'localhost')) {
         throw new RuntimeException(
-            'DATABASE_URL is not reaching this service. On Render: open ailab-web → Environment → '
-            . 'set DATABASE_URL to the Postgres External Database URL (full host ending in -postgres.render.com), then Save, rebuild, and deploy.'
+            'DATABASE_URL is not reaching this service. On Render: open this web service → Environment → '
+            . 'set DATABASE_URL to the Postgres Internal Database URL, then Save and deploy.'
         );
     }
 

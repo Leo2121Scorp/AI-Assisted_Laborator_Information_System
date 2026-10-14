@@ -38,7 +38,14 @@ function exec_sql_file(PDO $pdo, string $path): void
 
 try {
     if ($driver === 'pgsql') {
-        $dsn = sprintf('pgsql:host=%s;port=%d;dbname=%s', $config['host'], $config['port'], $config['dbname']);
+        $ssl = (string) ($config['sslmode'] ?? 'require');
+        $dsn = sprintf(
+            'pgsql:host=%s;port=%d;dbname=%s;sslmode=%s',
+            $config['host'],
+            $config['port'],
+            $config['dbname'],
+            $ssl
+        );
         $schema = __DIR__ . '/../database/schema.postgres.sql';
         $seed = __DIR__ . '/../database/seed.postgres.sql';
     } else {

@@ -12,11 +12,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
     if ($username === '' || $password === '') {
         $error = 'Username and password are required.';
-    } elseif (attempt_login($username, $password)) {
-        flash('success', 'Welcome back.');
-        redirect(has_role(ROLE_PATIENT) ? 'portal/dashboard.php' : 'dashboard.php');
     } else {
-        $error = 'Invalid credentials.';
+        try {
+            if (attempt_login($username, $password)) {
+                flash('success', 'Welcome back.');
+                redirect(has_role(ROLE_PATIENT) ? 'portal/dashboard.php' : 'dashboard.php');
+            }
+            $error = 'Invalid credentials.';
+        } catch (Throwable $e) {
+            $error = 'Database is not ready yet. Wait for the latest Render deploy, then try again.';
+        }
     }
 }
 $pageTitle = 'Login — AI-LIS';
