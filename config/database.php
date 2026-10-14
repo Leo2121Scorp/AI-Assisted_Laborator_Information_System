@@ -82,17 +82,19 @@ if (is_string($url) && $url !== '') {
     }
 }
 
-// Render also exposes discrete Postgres vars
-if (($driver === 'mysql' && ailab_env('PGHOST')) || ailab_env('PGHOST')) {
-    if (ailab_env('PGHOST')) {
-        $driver = 'pgsql';
-        $host = ailab_env('PGHOST') ?? $host;
-        $port = (int) (ailab_env('PGPORT') ?? 5432);
-        $dbname = ailab_env('PGDATABASE') ?? $dbname;
-        $username = ailab_env('PGUSER') ?? $username;
-        $password = ailab_env('PGPASSWORD') ?? $password;
-        $sslmode = $sslmode ?: 'require';
+// Discrete PG* vars only when DATABASE_URL is missing. They must not
+// overwrite a full URL (a stale PGPASSWORD was breaking Render logins).
+if ((ailab_env('DATABASE_URL') ?? '') === '' && ailab_env('PGHOST')) {
+    $driver = 'pgsql';
+    $host = ailab_env('PGHOST') ?? $host;
+    $port = (int) (ailab_env('PGPORT') ?? 5432);
+    $dbname = ailab_env('PGDATABASE') ?? $dbname;
+    $username = ailab_env('PGUSER') ?? $username;
+    $pgPass = ailab_env('PGPASSWORD');
+    if ($pgPass !== null && $pgPass !== '') {
+        $password = $pgPass;
     }
+    $sslmode = $sslmode ?: 'require';
 }
 
 // Build host candidates: internal short name often fails DNS; try external FQDNs
