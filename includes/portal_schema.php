@@ -38,10 +38,14 @@ function ensure_portal_schema_pgsql(PDO $pdo): void
         }
         $pdo->exec('ALTER TABLE users DROP CONSTRAINT ' . $name);
     }
-    $pdo->exec(
-        "ALTER TABLE users ADD CONSTRAINT users_role_check
-         CHECK (role IN ('manager', 'med_tech', 'staff', 'patient'))"
-    );
+    try {
+        $pdo->exec(
+            "ALTER TABLE users ADD CONSTRAINT users_role_check
+             CHECK (role IN ('manager', 'med_tech', 'staff', 'patient'))"
+        );
+    } catch (Throwable $e) {
+        // Constraint already present after a previous boot.
+    }
 
     $pdo->exec('ALTER TABLE patients ADD COLUMN IF NOT EXISTS user_id INTEGER NULL');
     $pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS uq_patients_user ON patients (user_id)');
@@ -90,7 +94,16 @@ function ensure_portal_schema_mysql(PDO $pdo): void
     $userCol = $pdo->query("SHOW COLUMNS FROM patients LIKE 'user_id'")->fetch();
     if (!$userCol) {
         $pdo->exec('ALTER TABLE patients ADD COLUMN user_id INT UNSIGNED NULL');
+    }
+    $idx = $pdo->query("SHOW INDEX FROM patients WHERE Key_name = 'uq_patients_user'")->fetch();
+    if (!$idx) {
         $pdo->exec('ALTER TABLE patients ADD UNIQUE KEY uq_patients_user (user_id)');
+    }
+    $fk = $pdo->query(
+        "SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'patients' AND CONSTRAINT_NAME = 'fk_patients_user'"
+    )->fetch();
+    if (!$fk) {
         $pdo->exec(
             'ALTER TABLE patients ADD CONSTRAINT fk_patients_user
              FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE'

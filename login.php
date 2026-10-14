@@ -3,7 +3,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/bootstrap.php';
 
 if (is_logged_in()) {
-    redirect('dashboard.php');
+    redirect(has_role(ROLE_PATIENT) ? 'portal/dashboard.php' : 'dashboard.php');
 }
 
 $error = null;
@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Username and password are required.';
     } elseif (attempt_login($username, $password)) {
         flash('success', 'Welcome back.');
-        redirect('dashboard.php');
+        redirect(has_role(ROLE_PATIENT) ? 'portal/dashboard.php' : 'dashboard.php');
     } else {
         $error = 'Invalid credentials.';
     }
